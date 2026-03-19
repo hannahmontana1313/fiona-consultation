@@ -48,7 +48,7 @@ export default function Reserver() {
     }));
   }, [userData]);
 
-  const handle = e => setForm({ ...f => ({ ...f, [e.target.name]: e.target.value }) });
+
   const handleField = (name, val) => setForm(f => ({ ...f, [name]: val }));
 
   const dureeChoisie = DUREES[dureeIdx];
