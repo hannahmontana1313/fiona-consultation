@@ -228,6 +228,20 @@ useEffect(() => {
     setLoadingAjout(false);
   };
 
+  const envoyerAvis = async () => {
+  if (!avisTexte.trim() || !consultationId) return;
+  await addDoc(collection(db, 'avis'), {
+    consultationId,
+    userId: user.uid,
+    prenom: consultation.prenom,
+    note: avisNote,
+    texte: avisTexte,
+    visible: false,
+    createdAt: serverTimestamp(),
+  });
+  setAvisEnvoye(true);
+  setAvisOpen(false);
+};
   const timerPct = consultation
     ? Math.max(0, (secondesRestantes / (consultation.minutes * 60)) * 100)
     : 100;
