@@ -63,6 +63,7 @@ if (!ancienConsultationId) {
     createdAt: serverTimestamp(),
     paiement: 'stripe',
     telephone: telephone || '',
+    prioritaire: prioritaire || false,
   });
 }
 
