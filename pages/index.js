@@ -9,7 +9,20 @@ import { db } from '../lib/firebase';
 export default function Home() {
   const { user } = useAuth();
   const tarif = getTarifActuel();
-  const isWeekend = tarif === 5;
+const isWeekend = tarif === 5;
+const [avis, setAvis] = useState([]);
+
+useEffect(() => {
+  const q = query(
+    collection(db, 'avis'),
+    where('visible', '==', true),
+    orderBy('createdAt', 'desc')
+  );
+  const unsub = onSnapshot(q, snap => {
+    setAvis(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  });
+  return unsub;
+}, []);
 
   return (
     <>
