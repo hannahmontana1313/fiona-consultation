@@ -602,7 +602,7 @@ function TiragesAdmin() {
         <div style={{ background: 'rgba(255,255,255,0.6)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '3rem', opacity: 0.3 }}>🔮</div>
-            <div style={{ fontSize: '15px' }}>Sélectionne un tirage</div>
+            <div style={{ fontSize: '15px' }}>Selectionne un tirage</div>
           </div>
         </div>
       )}
