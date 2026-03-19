@@ -141,6 +141,8 @@ export default function Reserver() {
                 onChange={e => handleField('telephone', e.target.value)}
                 placeholder="06, 07 ou numéro international..." />
             </div>
+            <div className="form-group">
+              <label className="form-label">Domaine de ta consultation</label>
               <select className="input" name="domaine" value={form.domaine}
                 onChange={e => handleField('domaine', e.target.value)}>
                 {DOMAINES.map(d => <option key={d}>{d}</option>)}
