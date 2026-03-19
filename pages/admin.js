@@ -259,7 +259,15 @@ export default function Admin() {
 </button>
         </div>
 
-        {onglet === 'contacts' && (
+        {onglet === 'avis' && (
+  <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+    <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+      <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.2rem', color: 'var(--vd)' }}>Avis clients</h2>
+    </div>
+    <AvisAdmin />
+  </div>
+)}
+{onglet === 'contacts' && (
           <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', overflow: 'hidden' }}>
             <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
               <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.2rem', color: 'var(--vd)' }}>Mes clients</h2>
