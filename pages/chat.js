@@ -98,7 +98,7 @@ export default function Chat() {
 
   // Décrémenter timer en local (synchro Firestore toutes les 30s)
   useEffect(() => {
-    if (secondesRestantes === null || bloque) return;
+    if (secondesRestantes === null || bloque || consultation?.statut !== 'active') return;
 
     timerRef.current = setInterval(() => {
       setSecrestantes(prev => {
