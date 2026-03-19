@@ -70,6 +70,7 @@ useEffect(() => {
     setLoading(false);
     if (data.statut === 'terminee') { setBloque(true); setAvisOpen(true); }
 if (data.statut === 'en_attente' || data.statut === 'active') setBloque(false);
+    setAdminIsTyping(data.adminIsTyping || false);
   });
   return unsub;
 }, [consultationId]);
