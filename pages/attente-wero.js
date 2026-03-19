@@ -9,11 +9,11 @@ import { useAuth } from '../components/AuthContext';
 export default function AttenteWero() {
   const router = useRouter();
   const { user } = useAuth();
-  const { prenom, domaine, sujet, message, minutes, montant } = router.query;
+  const { prenom, domaine, sujet, message, minutes, montant, userId, tarif } = router.query;
   const [enregistre, setEnregistre] = useState(false);
 
   useEffect(() => {
-    if (!user || !minutes || enregistre) return;
+    if (!router.isReady || !user || !minutes || enregistre) return;
     const id = `wero_${user.uid}_${Date.now()}`;
     setDoc(doc(db, 'consultations', id), {
       consultationId: id,
