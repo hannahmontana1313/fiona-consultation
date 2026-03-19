@@ -220,6 +220,29 @@ export default function Chat() {
     );
   }
 
+  if (consultation?.statut === 'en_attente') {
+    return (
+      <>
+        <Stars />
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}>
+          <div className="card" style={{ maxWidth: 480, width: '100%', padding: '3rem 2rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✦</div>
+            <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.6rem', color: 'var(--vd)', marginBottom: '1rem' }}>
+              Tu es dans la salle d'attente
+            </h1>
+            <p style={{ color: 'var(--muted)', lineHeight: 1.7, marginBottom: '1.5rem' }}>
+              Ton paiement a bien été reçu. Je vais démarrer ta consultation très bientôt.
+              Le chronomètre ne démarrera qu'une fois que j'aurai accepté ta demande.
+            </p>
+            <div style={{ padding: '1rem', borderRadius: 'var(--r)', background: 'rgba(123,94,167,0.08)', border: '1px solid var(--vl)', fontSize: '14px', color: 'var(--vd)' }}>
+              ⏳ En attente de confirmation…
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Stars />
