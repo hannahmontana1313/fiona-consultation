@@ -89,6 +89,12 @@ export default function Admin() {
     const q = query(collection(db, 'consultations'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, snap => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const nouvellesAttentes = data.filter(c => 
+        c.statut === 'en_attente' && !(c.id in timers)
+      );
+      if (nouvellesAttentes.length > 0 && sonActif) {
+        notifSound.current?.play().catch(() => {});
+      }
       setConsultations(data);
       data.forEach(c => {
         if (!(c.id in timers)) {
