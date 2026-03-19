@@ -30,10 +30,10 @@ export default async function handler(req, res) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const { userId, minutes, consultationId } = session.metadata;
+    const { userId, minutes } = session.metadata;
 
-    try {
-      await updateDoc(doc(db, 'consultations', consultationId), {
+try {
+  await updateDoc(doc(db, 'consultations', session.id), {
         statut: 'en_attente',
         payeAt: serverTimestamp(),
         secondesRestantes: parseInt(minutes) * 60,
