@@ -145,9 +145,15 @@ export default function AttenteWero() {
             }}>
               ⚠️ {tirage === 'true' ? 'Tu seras redirigée vers le tirage automatiquement.' : 'Ton accès au chat sera activé manuellement dès réception du paiement. Cela prend généralement 2 à 5 minutes.'}
             </div>
-            <button onClick={() => tirage !== 'true' && router.push('/historique')} className="btn btn-primary btn-full">
-              ✓ J'ai effectué le paiement
-            </button>
+            <button onClick={() => {
+  if (tirage === 'true' && tirageId) {
+    router.push('/tirage?tirage_id=' + tirageId);
+  } else {
+    router.push('/historique');
+  }
+}} className="btn btn-primary btn-full">
+  ✓ J'ai effectué le paiement
+</button>
           </div>
         </div>
       </div>
