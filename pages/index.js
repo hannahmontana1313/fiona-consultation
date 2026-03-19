@@ -10,7 +10,42 @@ export default function Home() {
   const { user } = useAuth();
   const tarif = getTarifActuel();
   const isWeekend = tarif === 5;
-const [avis, setAvis] = useState([]);
+const MESSAGES_DU_JOUR = [
+  "✨ Les astres s'alignent aujourd'hui pour révéler ce que ton cœur pressent déjà...",
+  "🌙 La lune murmure des secrets à ceux qui savent écouter. Es-tu prête à entendre la vérité ?",
+  "🔮 Chaque question que tu portes en toi mérite une réponse. L'univers a des messages pour toi.",
+  "⭐ Les cartes ne mentent jamais. Elles révèlent ce que ton âme sait déjà.",
+  "🌟 Ton destin n'est pas écrit dans le marbre, mais les signes sont là pour te guider.",
+  "💫 Certaines coïncidences ne sont pas des hasards. L'univers te parle, es-tu prête à l'écouter ?",
+  "🌸 Les énergies du jour sont favorables aux révélations. C'est le moment de chercher les réponses.",
+  "🕯️ Dans le silence de ton intuition se trouve la vérité que tu cherches.",
+  "🌠 Les étoiles ont tracé un chemin pour toi. Laisse la voyance t'aider à le trouver.",
+  "🔯 L'avenir appartient à ceux qui croient en la puissance de leur intuition.",
+  "🌙 Ce que tu ressens profondément en toi est souvent le reflet de ce qui est vrai.",
+  "✨ Les portes de la clairvoyance s'ouvrent à ceux qui cherchent avec sincérité.",
+  "💜 Ton âme connaît déjà les réponses. Laisse les cartes les révéler.",
+  "🌟 Aujourd'hui est un jour propice pour lever le voile sur ce qui te trouble.",
+  "🔮 L'univers conspire toujours en faveur de ceux qui cherchent leur vérité.",
+  "⭐ Chaque tirage est un dialogue entre ton âme et les forces invisibles qui t'entourent.",
+  "🌸 Les signes sont partout. Il suffit de savoir les lire.",
+  "💫 Ta vie est guidée par des forces que tu peux apprendre à comprendre.",
+  "🕯️ La voyance n'est pas de la magie, c'est la lumière qui éclaire ce que tu ressens déjà.",
+  "🌙 Les mystères de demain commencent à se dessiner aujourd'hui.",
+  "✨ Fais confiance aux messages que l'univers t'envoie. Ils sont là pour une raison.",
+  "🌠 Ton chemin de vie est unique. Laisse la sagesse des cartes t'y guider.",
+  "💜 Ce qui semble flou aujourd'hui deviendra clair avec la bonne guidance.",
+  "🔯 L'intuition est ton plus grand pouvoir. La voyance t'aide à l'amplifier.",
+  "🌟 Chaque jour apporte de nouvelles possibilités. Sois ouverte aux messages du destin.",
+  "🔮 Les cartes révèlent non pas ce qui doit arriver, mais ce qui peut arriver.",
+  "⭐ Ta destinée t'appartient. La voyance t'aide simplement à mieux la comprendre.",
+  "🌸 Les énergies universelles parlent à travers les cartes. Es-tu prête à les écouter ?",
+  "💫 Ce que tu cherches te cherche aussi. Laisse la voyance créer cette rencontre.",
+  "🕯️ Dans chaque question se cache une réponse. Laisse les cartes la révéler.",
+  "🌙 La sagesse des anciens s'exprime à travers les symboles. Laisse-les te guider.",
+];
+
+const messageDuJour = MESSAGES_DU_JOUR[new Date().getDate() % MESSAGES_DU_JOUR.length];
+  const [avis, setAvis] = useState([]);
 
 useEffect(() => {
   const q = query(
