@@ -269,9 +269,15 @@ const enAttente = consultations.filter(c => c.statut === 'en_attente').sort((a, 
               <button onClick={() => setOnglet('avis')} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === 'avis' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === 'avis' ? '#fff' : 'var(--muted)', border: onglet === 'avis' ? 'none' : '1px solid var(--border)' }}>
   Avis clients
 </button>
+    <button onClick={() => setOnglet('tirages')} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === 'tirages' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === 'tirages' ? '#fff' : 'var(--muted)', border: onglet === 'tirages' ? 'none' : '1px solid var(--border)' }}>
+  🔮 Tirages
+</button>
         </div>
 
-        {onglet === 'avis' && (
+       {onglet === 'tirages' && (
+  <TiragesAdmin />
+)}
+{onglet === 'avis' && (
   <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', overflow: 'hidden' }}>
     <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
       <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.2rem', color: 'var(--vd)' }}>Avis clients</h2>
@@ -483,6 +489,105 @@ function AvisAdmin() {
           </button>
         </div>
       ))}
+    </div>
+  );
+}
+function TiragesAdmin() {
+  const [tirages, setTirages] = useState([]);
+  const [selectedTirage, setSelectedTirage] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [reponse, setReponse] = useState('');
+
+  useEffect(() => {
+    const q = collection(db, 'tirages');
+    return onSnapshot(q, snap => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      setTirages(data);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!selectedTirage) return;
+    const q = collection(db, 'tirages', selectedTirage, 'messages');
+    return onSnapshot(q, snap => {
+      const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+      setMessages(msgs);
+    });
+  }, [selectedTirage]);
+
+  const envoyerReponse = async () => {
+    if (!reponse.trim() || !selectedTirage) return;
+    const texte = reponse.trim();
+    setReponse('');
+    await addDoc(collection(db, 'tirages', selectedTirage, 'messages'), {
+      texte, auteur: 'admin', createdAt: serverTimestamp(),
+    });
+    await updateDoc(doc(db, 'tirages', selectedTirage), {
+      lastMessageAdmin: texte, lastMessageAdminAt: serverTimestamp(),
+    });
+  };
+
+  const tirageSelectionne = tirages.find(t => t.id === selectedTirage);
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '1rem', height: 'calc(100vh - 320px)' }}>
+      <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', overflowY: 'auto' }}>
+        {tirages.length === 0 && <p style={{ color: 'var(--muted)', padding: '1rem', fontSize: '14px' }}>Aucun tirage pour l'instant.</p>}
+        {tirages.map(t => (
+          <div key={t.id} onClick={() => setSelectedTirage(t.id)} style={{ padding: '0.85rem 1rem', cursor: 'pointer', borderBottom: '1px solid var(--border)', background: selectedTirage === t.id ? 'rgba(123,94,167,0.1)' : 'transparent' }}>
+            <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--vd)' }}>🔮 {t.prenom}</div>
+            <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '3px' }}>
+              {t.carteNom || 'Carte non tirée'} · {t.statut}
+            </div>
+            {t.question && <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '3px', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>"{t.question}"</div>}
+          </div>
+        ))}
+      </div>
+
+      {selectedTirage && tirageSelectionne ? (
+        <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ fontWeight: 500, fontSize: '15px', color: 'var(--vd)' }}>🔮 {tirageSelectionne.prenom}</div>
+            <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
+              Carte : <strong>{tirageSelectionne.carteNom || 'Non tirée'}</strong>
+              {tirageSelectionne.telephone ? ' · Tel: ' + tirageSelectionne.telephone : ''}
+            </div>
+            {tirageSelectionne.question && (
+              <div style={{ marginTop: '8px', padding: '8px 12px', background: 'rgba(123,94,167,0.06)', borderRadius: 'var(--r)', fontSize: '13px', color: 'var(--vd)', fontStyle: 'italic' }}>
+                Question : "{tirageSelectionne.question}"
+              </div>
+            )}
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {messages.map(msg => {
+              const isAdmin = msg.auteur === 'admin';
+              return (
+                <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignSelf: isAdmin ? 'flex-end' : 'flex-start', alignItems: isAdmin ? 'flex-end' : 'flex-start', maxWidth: '75%' }}>
+                  <div className={isAdmin ? 'bubble-client' : 'bubble-admin'} style={{ padding: '10px 15px', borderRadius: '18px', fontSize: '14px', lineHeight: 1.6 }}>
+                    {msg.texte}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ padding: '10px 1.25rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+            <textarea value={reponse} onChange={e => setReponse(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyerReponse(); } }}
+              placeholder={`Interpréter la carte de ${tirageSelectionne.prenom}...`} rows={2}
+              style={{ flex: 1, border: '1.5px solid var(--border)', borderRadius: 'var(--r)', padding: '10px 14px', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', resize: 'none', outline: 'none', color: 'var(--txt)', background: 'var(--bgs)' }} />
+            <button onClick={envoyerReponse} style={{ width: 42, height: 42, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg, var(--v), var(--pd))', color: '#fff', cursor: 'pointer', fontSize: '16px' }}>↑</button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ background: 'rgba(255,255,255,0.6)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', opacity: 0.3 }}>🔮</div>
+            <div style={{ fontSize: '15px' }}>Sélectionne un tirage</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
