@@ -25,6 +25,7 @@ export default function Reserver() {
 
   const [form, setForm] = useState({
     prenom: '',
+    telephone: '',
     domaine: 'Sentimental',
     sujet: '',
     message: '',
@@ -58,6 +59,7 @@ export default function Reserver() {
         pathname: '/attente-wero',
         query: {
           prenom: form.prenom,
+          telephone: form.telephone,
           domaine: form.domaine,
           sujet: form.sujet,
           message: form.message,
@@ -80,6 +82,7 @@ export default function Reserver() {
           tarif,
           userId: user.uid,
           prenom: form.prenom,
+          telephone: form.telephone,
           domaine: form.domaine,
           sujet: form.sujet,
           message: form.message,
@@ -133,7 +136,11 @@ export default function Reserver() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Domaine de ta consultation</label>
+              <label className="form-label">Ton numéro de téléphone (optionnel)</label>
+              <input className="input" name="telephone" type="tel" value={form.telephone}
+                onChange={e => handleField('telephone', e.target.value)}
+                placeholder="06, 07 ou numéro international..." />
+            </div>
               <select className="input" name="domaine" value={form.domaine}
                 onChange={e => handleField('domaine', e.target.value)}>
                 {DOMAINES.map(d => <option key={d}>{d}</option>)}
