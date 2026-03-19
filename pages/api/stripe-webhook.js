@@ -25,7 +25,6 @@ export default async function handler(req, res) {
   try {
     event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error('Webhook signature error:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -34,19 +33,12 @@ export default async function handler(req, res) {
     const { userId, minutes } = session.metadata;
 
     try {
-      // Marquer la consultation comme active + démarrer le timer
       await updateDoc(doc(db, 'consultations', session.id), {
-        statut: 'active',
+        statut: 'en_attente',
         payeAt: serverTimestamp(),
-        debutAt: serverTimestamp(), // le timer démarre maintenant
         secondesRestantes: parseInt(minutes) * 60,
-        montantPaye: session.amount_total, // en centimes
+        montantPaye: session.amount_total,
       });
-
-      // Ajouter à la collection user pour recherche rapide
-      await updateDoc(doc(db, 'users', userId), {
-        consultationActive: session.id,
-      }).catch(() => {}); // ignore si user doc pas encore prêt
     } catch (err) {
       console.error('Firestore update error:', err);
     }
