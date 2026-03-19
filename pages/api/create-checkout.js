@@ -43,6 +43,7 @@ export default async function handler(req, res) {
   minutes: String(minutes),
   tarif: String(tarif),
   ancienConsultationId: ancienConsultationId || '',
+  prioritaire: prioritaire ? 'true' : 'false',
 },
     });
 
