@@ -18,6 +18,7 @@ export default function Admin() {
   const [reponse, setReponse] = useState('');
   const [search, setSearch] = useState('');
   const [statut, setStatut] = useState('En ligne');
+  const [sonActif, setSonActif] = useState(false);
   const [timers, setTimers] = useState({});
   const notifSound = useRef(null);
   const msgsRef = useRef(null);
@@ -91,7 +92,7 @@ export default function Admin() {
       const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       if (msgs.length > prevMsgCount.current) {
         const last = msgs[msgs.length - 1];
-        if (last?.auteur === 'client') notifSound.current?.play().catch(() => {});
+        if (last?.auteur === 'client') if (sonActif) notifSound.current?.play().catch(() => {});
       }
       prevMsgCount.current = msgs.length;
       setMessages(msgs);
@@ -199,6 +200,10 @@ export default function Admin() {
             <button onClick={() => setStatut(s => s === 'En ligne' ? 'Hors ligne' : 'En ligne')}
               className="btn btn-outline" style={{ fontSize: '13px', padding: '7px 16px' }}>
               {statut === 'En ligne' ? 'Passer hors ligne' : 'Passer en ligne'}
+            </button>
+            <button onClick={() => { setSonActif(s => !s); notifSound.current?.play().catch(() => {}); }}
+              className="btn btn-outline" style={{ fontSize: '13px', padding: '7px 16px' }}>
+              {sonActif ? '🔔 Son activé' : '🔕 Activer le son'}
             </button>
           </div>
         </div>
