@@ -163,13 +163,16 @@ export default function Admin() {
     await updateDoc(doc(db, 'tirages', selectedTirage), {
       lastMessageAdmin: texte, lastMessageAdminAt: serverTimestamp(),
     });
-    // Message automatique après la réponse
     await new Promise(resolve => setTimeout(resolve, 2000));
     await addDoc(collection(db, 'tirages', selectedTirage, 'messages'), {
       texte: '✨ Si tu souhaites plus de détails ou approfondir un sujet, n\'hésite pas à prendre une consultation privée avec moi !',
       auteur: 'admin',
       createdAt: serverTimestamp(),
     });
+  };
+
+  const terminerTirage = async (id) => {
+    await updateDoc(doc(db, 'tirages', id), { statut: 'termine' });
   };
 
   const terminerConsultation = async (id) => {
