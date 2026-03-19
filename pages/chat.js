@@ -456,7 +456,17 @@ if (bloque && consultation?.statut === 'terminee' && messages.length > 0) {
           })}
         </div>
 
-        {/* Zone de saisie */}
+       {adminIsTyping && (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 8px', color: 'var(--muted)', fontSize: '13px', fontStyle: 'italic' }}>
+    <div style={{ display: 'flex', gap: '3px' }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--v)', display: 'inline-block', animation: 'bounce 1s infinite' }} />
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--v)', display: 'inline-block', animation: 'bounce 1s infinite 0.2s' }} />
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--v)', display: 'inline-block', animation: 'bounce 1s infinite 0.4s' }} />
+    </div>
+    Fiona est en train d'écrire…
+  </div>
+)} 
+{/* Zone de saisie */}
         <div style={{
           background: 'rgba(255,255,255,0.9)', borderRadius: 'var(--r2)',
           border: '1px solid var(--border)', padding: '10px 12px',
