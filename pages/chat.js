@@ -27,6 +27,10 @@ export default function Chat() {
   const [ajoutTempsOpen, setAjoutTempsOpen] = useState(false);
   const [ajoutMinutes, setAjoutMinutes] = useState(10);
   const [loadingAjout, setLoadingAjout] = useState(false);
+  const [avisOpen, setAvisOpen] = useState(false);
+const [avisNote, setAvisNote] = useState(5);
+const [avisTexte, setAvisTexte] = useState('');
+const [avisEnvoye, setAvisEnvoye] = useState(false);
 
   const msgsRef = useRef(null);
   const timerRef = useRef(null);
