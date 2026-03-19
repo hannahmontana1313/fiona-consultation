@@ -40,7 +40,7 @@ export default async function handler(req, res) {
   message: message?.substring(0, 500) || '',
   minutes: String(minutes),
   tarif: String(tarif),
-  
+  ancienConsultationId: ancienConsultationId || '',
 },
     });
 
