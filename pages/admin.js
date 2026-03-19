@@ -26,7 +26,24 @@ export default function Admin() {
   const timerIntervals = useRef({});
 
   useEffect(() => {
-    notifSound.current = typeof Audio !== 'undefined' ? new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3') : null;
+    if (typeof AudioContext !== 'undefined') {
+      const ctx = new AudioContext();
+      notifSound.current = {
+        play: () => {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.connect(g);
+          g.connect(ctx.destination);
+          o.frequency.setValueAtTime(880, ctx.currentTime);
+          o.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
+          g.gain.setValueAtTime(0.3, ctx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+          o.start(ctx.currentTime);
+          o.stop(ctx.currentTime + 0.4);
+          return Promise.resolve();
+        }
+      };
+    }
   }, []);
 
   useEffect(() => {
