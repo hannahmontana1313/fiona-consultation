@@ -162,7 +162,7 @@ useEffect(() => {
     }, 1000);
 
     return () => clearInterval(timerRef.current);
- }, [secondesRestantes, bloque, consultation?.statut]);
+ }, [secondesRestantes !== null, bloque, consultation?.statut]);
 
   const formatTimer = (secs) => {
     if (secs === null) return '--:--';
