@@ -1,0 +1,49 @@
+// firestore.rules
+// À déployer via : firebase deploy --only firestore:rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Utilisateurs ───────────────────────────────────────────
+    match /users/{userId} {
+      // Lecture : l'utilisateur lui-même ou un admin
+      allow read: if request.auth.uid == userId || isAdmin();
+      // Création : uniquement soi-même à l'inscription
+      allow create: if request.auth.uid == userId;
+      // Mise à jour : soi-même (pas le champ "role") ou admin
+      allow update: if (request.auth.uid == userId && !request.resource.data.keys().hasAny(['role']))
+                    || isAdmin();
+    }
+
+    // ── Consultations ──────────────────────────────────────────
+    match /consultations/{consultationId} {
+      // Lecture : propriétaire de la consultation ou admin
+      allow read: if resource.data.userId == request.auth.uid || isAdmin();
+      // Création : uniquement via l'API server (pas depuis le client)
+      allow create: if false;
+      // Mise à jour : propriétaire peut mettre à jour secondesRestantes, statut (limité)
+      allow update: if (resource.data.userId == request.auth.uid
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                           .hasOnly(['secondesRestantes', 'lastMessage', 'lastMessageAt', 'messagesNonLus']))
+                    || isAdmin();
+
+      // ── Messages d'une consultation ─────────────────────────
+      match /messages/{messageId} {
+        // Lecture : propriétaire ou admin
+        allow read: if get(/databases/$(database)/documents/consultations/$(consultationId)).data.userId
+                       == request.auth.uid || isAdmin();
+        // Écriture : propriétaire (auteur client) ou admin
+        allow create: if get(/databases/$(database)/documents/consultations/$(consultationId)).data.userId
+                         == request.auth.uid || isAdmin();
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    // ── Fonction helper : est-ce un admin ? ────────────────────
+    function isAdmin() {
+      return request.auth != null
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+  }
+}
