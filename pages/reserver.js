@@ -60,7 +60,15 @@ export default function Reserver() {
     if (!form.sujet.trim()) return setError('Merci d\'indiquer ton sujet.');
     setLoading(true);
     setError('');
-
+// Sauvegarder le téléphone dans le profil utilisateur
+    if (form.telephone && user) {
+      const { doc, updateDoc } = await import('firebase/firestore');
+      const { db } = await import('../lib/firebase');
+      await updateDoc(doc(db, 'users', user.uid), {
+        telephone: form.telephone,
+        prenom: form.prenom,
+      }).catch(() => {});
+    }
     if (paiement === 'wero') {
       // Wero : redirection avec instructions
       router.push({
