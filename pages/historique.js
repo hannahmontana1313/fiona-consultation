@@ -113,11 +113,19 @@ export default function Historique() {
                   )}
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {c.statut === 'active' && (
+                    {(c.statut === 'active' || c.statut === 'en_attente') && (
                       <Link href={`/chat?consultation=${c.id}`} className="btn btn-primary" style={{ padding: '8px 20px', fontSize: '13px' }}>
-                        Reprendre le chat →
+                        {c.statut === 'en_attente' ? 'Voir ma file d\'attente →' : 'Reprendre le chat →'}
                       </Link>
                     )}
+                    {c.statut === 'terminee' && (
+                      <Link href={`/chat?consultation=${c.id}`} className="btn btn-outline" style={{ padding: '8px 20px', fontSize: '13px' }}>
+                        Voir la conversation
+                      </Link>
+                    )}
+                    <Link href="/reserver" className="btn btn-outline" style={{ padding: '8px 20px', fontSize: '13px' }}>
+                      Nouvelle consultation
+                    </Link>
                     {c.statut === 'terminee' && (
                       <Link href="/reserver" className="btn btn-outline" style={{ padding: '8px 20px', fontSize: '13px' }}>
                         Nouvelle consultation
