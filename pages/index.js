@@ -187,6 +187,38 @@ useEffect(() => {
           }}>
             ⚠️ Le temps démarre dès l'ouverture du chat · Le chrono ne s'arrête jamais · Aucun remboursement après démarrage
           </div>
+              {/* Témoignages */}
+          {avis.length > 0 && (
+            <section className="card" style={{ padding: '2.5rem', marginTop: '1.5rem' }}>
+              <h2 style={{
+                fontFamily: "'Playfair Display', serif",
+                fontSize: '1.6rem', color: 'var(--vd)',
+                textAlign: 'center', marginBottom: '2rem',
+              }}>
+                ⭐ Ce qu'elles disent
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+                {avis.map(a => (
+                  <div key={a.id} style={{
+                    padding: '1.5rem', borderRadius: 'var(--r)',
+                    background: 'rgba(123,94,167,0.04)', border: '1px solid var(--border)',
+                  }}>
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      {[1,2,3,4,5].map(n => (
+                        <span key={n} style={{ opacity: n <= a.note ? 1 : 0.2 }}>⭐</span>
+                      ))}
+                    </div>
+                    <p style={{ fontSize: '14px', color: 'var(--txt)', lineHeight: 1.7, marginBottom: '1rem', fontStyle: 'italic' }}>
+                      "{a.texte}"
+                    </p>
+                    <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--vd)' }}>
+                      — {a.prenom}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </main>
     </>
