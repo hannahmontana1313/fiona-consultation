@@ -43,3 +43,5 @@ export default async function handler(req, res) {
     console.error('Firestore update error:', err);
   }
 }
+  res.status(200).json({ received: true });
+}
