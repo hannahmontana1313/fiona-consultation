@@ -254,6 +254,9 @@ export default function Admin() {
           <button onClick={() => setOnglet('contacts')} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === 'contacts' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === 'contacts' ? '#fff' : 'var(--muted)', border: onglet === 'contacts' ? 'none' : '1px solid var(--border)' }}>
             Mes clients
           </button>
+              <button onClick={() => setOnglet('avis')} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === 'avis' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === 'avis' ? '#fff' : 'var(--muted)', border: onglet === 'avis' ? 'none' : '1px solid var(--border)' }}>
+  Avis clients
+</button>
         </div>
 
         {onglet === 'contacts' && (
