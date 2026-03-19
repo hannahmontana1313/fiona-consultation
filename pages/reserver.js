@@ -232,6 +232,26 @@ export default function Reserver() {
               </div>
             </div>
 
+            {/* Option prioritaire */}
+            <div onClick={() => setPrioritaire(p => !p)} style={{
+              marginTop: '1rem', padding: '14px', borderRadius: 'var(--r)',
+              border: `1.5px solid ${prioritaire ? '#F0C040' : 'var(--border)'}`,
+              background: prioritaire ? 'rgba(240,192,64,0.08)' : 'rgba(255,255,255,0.7)',
+              cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'center',
+              transition: 'all 0.18s',
+            }}>
+              <span style={{ fontSize: '1.5rem' }}>⭐</span>
+              <div>
+                <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--vd)' }}>
+                  Consultation prioritaire — 7€
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px' }}>
+                  Passe devant tout le monde · Traitement immédiat
+                </div>
+              </div>
+              <div style={{ marginLeft: 'auto', width: 20, height: 20, borderRadius: '50%', border: `2px solid ${prioritaire ? '#F0C040' : 'var(--border)'}`, background: prioritaire ? '#F0C040' : 'transparent', flexShrink: 0 }} />
+            </div>
+
             {error && <p className="form-error" style={{ marginBottom: '1rem' }}>{error}</p>}
           </div>
 
