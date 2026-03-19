@@ -438,7 +438,7 @@ export default function Admin() {
 function AvisAdmin() {
   const [avis, setAvis] = useState([]);
   useEffect(() => {
-    const q = query(collection(db, 'avis'), orderBy('createdAt', 'desc'));
+    const q = collection(db, 'avis');
     return onSnapshot(q, snap => setAvis(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
   }, []);
   const toggleVisible = async (id, visible) => {
