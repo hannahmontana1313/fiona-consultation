@@ -161,7 +161,27 @@ useEffect(() => {
             </div>
           </section>
 
-          {/* Important */}
+          {/* Tirage express */}
+          <section className="card" style={{ padding: '2rem', marginBottom: '1.5rem', background: 'linear-gradient(135deg, rgba(42,26,74,0.05), rgba(123,94,167,0.08))', borderColor: 'var(--vl)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+              <div style={{ fontSize: '3rem' }}>🔮</div>
+              <div style={{ flex: 1 }}>
+                <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.3rem', color: 'var(--vd)', marginBottom: '4px' }}>
+                  Tirage Lenormand Express
+                </h2>
+                <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.6 }}>
+                  Tire 1 carte et reçois une interprétation personnalisée par Fiona en direct.
+                </p>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.8rem', color: 'var(--vd)' }}>5€</div>
+                <Link href={user ? '/tirage-reserver' : '/inscription'} className="btn btn-primary" style={{ marginTop: '8px', display: 'block', whiteSpace: 'nowrap' }}>
+                  🔮 Tirer ma carte
+                </Link>
+              </div>
+            </div>
+          </section>
+{/* Important */}
           <div style={{
             padding: '1rem 1.5rem',
             background: 'rgba(255,255,255,0.6)', borderRadius: 'var(--r)',
