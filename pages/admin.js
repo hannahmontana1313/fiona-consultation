@@ -330,7 +330,10 @@ const enAttente = consultations.filter(c => c.statut === 'en_attente').sort((a, 
                   {filteredConsultations.map(c => (
                     <div key={c.id} onClick={() => setSelected(c.id)} style={{ padding: '0.85rem', borderRadius: 'var(--r)', cursor: 'pointer', marginBottom: '4px', position: 'relative', transition: 'all 0.15s', background: selected === c.id ? 'rgba(123,94,167,0.1)' : 'transparent', border: selected === c.id ? '1px solid var(--vl)' : '1px solid transparent' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--vd)' }}>{c.prenom}</div>
+                        <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--vd)' }}>
+  {c.prioritaire && <span style={{ color: '#F0C040', marginRight: '4px' }}>⭐</span>}
+  {c.prenom}
+</div>
                         <div style={{ fontSize: '12px', fontWeight: 600, color: timerColor(c.id) }}>
                           {c.statut === 'active' ? formatTimer(c.id) : c.statut === 'en_attente' ? 'Attente' : 'OK'}
                         </div>
