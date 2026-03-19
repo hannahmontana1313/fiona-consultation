@@ -19,6 +19,7 @@ export default function Admin() {
   const [search, setSearch] = useState('');
   const [statut, setStatut] = useState('En ligne');
   const [sonActif, setSonActif] = useState(false);
+  const [onglet, setOnglet] = useState('conversations');
   const [timers, setTimers] = useState({});
   const notifSound = useRef(null);
   const msgsRef = useRef(null);
@@ -184,14 +185,36 @@ export default function Admin() {
   const totalNonLus = consultations.reduce((acc, c) => acc + (c.messagesNonLus || 0), 0);
   const totalPaye = consultations.filter(c => c.statut !== 'pending' && c.statut !== 'en_attente')
     .reduce((acc, c) => acc + (c.montantPaye || 0), 0);
-
   const filteredConsultations = consultations.filter(c => {
     if (!search) return true;
     const s = search.toLowerCase();
     return c.prenom?.toLowerCase().includes(s) || c.sujet?.toLowerCase().includes(s);
   });
-
   const selectedData = consultations.find(c => c.id === selected);
+
+  // Construire la liste des clients uniques avec leur total dépensé
+  const clientsMap = {};
+  consultations.forEach(c => {
+    if (!c.userId) return;
+    if (!clientsMap[c.userId]) {
+      clientsMap[c.userId] = {
+        userId: c.userId,
+        prenom: c.prenom,
+        email: c.email || '',
+        telephone: c.telephone || '',
+        totalDepense: 0,
+        nbConsultations: 0,
+      };
+    }
+    const montant = c.paiement === 'wero'
+      ? parseFloat(c.montant || 0)
+      : (c.montantPaye || 0) / 100;
+    clientsMap[c.userId].totalDepense += montant;
+    clientsMap[c.userId].nbConsultations += 1;
+    if (c.telephone) clientsMap[c.userId].telephone = c.telephone;
+    if (c.email) clientsMap[c.userId].email = c.email;
+  });
+  const clients = Object.values(clientsMap).sort((a, b) => b.totalDepense - a.totalDepense);
 
   if (loading) return null;
 
@@ -229,7 +252,23 @@ export default function Admin() {
             </button>
           </div>
         </div>
-
+{/* Onglets */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
+          <button onClick={() => setOnglet('conversations')} style={{
+            padding: '8px 20px', borderRadius: '50px', border: 'none', cursor: 'pointer',
+            fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500,
+            background: onglet === 'conversations' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)',
+            color: onglet === 'conversations' ? '#fff' : 'var(--muted)',
+            border: onglet === 'conversations' ? 'none' : '1px solid var(--border)',
+          }}>💬 Conversations</button>
+          <button onClick={() => setOnglet('contacts')} style={{
+            padding: '8px 20px', borderRadius: '50px', cursor: 'pointer',
+            fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500,
+            background: onglet === 'contacts' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)',
+            color: onglet === 'contacts' ? '#fff' : 'var(--muted)',
+            border: onglet === 'contacts' ? 'none' : '1px solid var(--border)',
+          }}>👥 Mes clients</button>
+        </div>
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginBottom: '1rem' }}>
           {[
@@ -248,7 +287,39 @@ export default function Admin() {
             </div>
           ))}
         </div>
+{onglet === 'contacts' && (
+          <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+              <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.2rem', color: 'var(--vd)' }}>👥 Mes clients</h2>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(123,94,167,0.06)' }}>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: 'var(--muted)', fontWeight: 500, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Prénom</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: 'var(--muted)', fontWeight: 500, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: 'var(--muted)', fontWeight: 500, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Téléphone</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: 'var(--muted)', fontWeight: 500, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Consultations</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', color: 'var(--muted)', fontWeight: 500, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total dépensé</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {clients.map((client, i) => (
+                    <tr key={client.userId} style={{ borderTop: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'rgba(123,94,167,0.02)' }}>
+                      <td style={{ padding: '12px 16px', fontWeight: 500, color: 'var(--vd)' }}>{client.prenom}</td>
+                      <td style={{ padding: '12px 16px', color: 'var(--muted)' }}>{client.email || '—'}</td>
+                      <td style={{ padding: '12px 16px', color: 'var(--muted)' }}>{client.telephone || '—'}</td>
+                      <td style={{ padding: '12px 16px', color: 'var(--muted)' }}>{client.nbConsultations}</td>
+                      <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1A7040' }}>{client.totalDepense.toFixed(2).replace('.', ',')}€</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
+        {onglet === 'conversations' && (
         {/* Demandes en attente */}
         {enAttente.length > 0 && (
           <div style={{ marginBottom: '1rem' }}>
@@ -410,6 +481,7 @@ export default function Admin() {
           )}
         </div>
       </div>
+        )}
     </>
   );
 }
