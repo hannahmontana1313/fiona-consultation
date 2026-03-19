@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import {
@@ -219,7 +220,31 @@ export default function Chat() {
       </div>
     );
   }
-
+if (consultation?.statut === 'terminee' && messages.length > 0) {
+    return (
+      <>
+        <Stars />
+        <div style={{ maxWidth: 700, margin: '0 auto', padding: '1rem', height: '100vh', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ padding: '1rem 1.25rem', background: 'linear-gradient(135deg, var(--v), var(--pd))', borderRadius: 'var(--r2)', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.1rem' }}>✦ Fiona — Consultation terminée</div>
+            <Link href="/historique" style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px' }}>← Retour</Link>
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', padding: '4px 0' }}>
+            {messages.map(msg => {
+              if (msg.type === 'alerte') return <div key={msg.id} className="alert-msg" style={{ alignSelf: 'center' }}>{msg.texte}</div>;
+              const isClient = msg.auteur === 'client';
+              return (
+                <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignSelf: isClient ? 'flex-end' : 'flex-start', alignItems: isClient ? 'flex-end' : 'flex-start', maxWidth: '75%' }}>
+                  <div className={isClient ? 'bubble-client' : 'bubble-admin'} style={{ padding: '10px 15px', borderRadius: '18px', fontSize: '14px', lineHeight: 1.6 }}>{msg.texte}</div>
+                </div>
+              );
+            })}
+          </div>
+          <Link href="/reserver" className="btn btn-primary" style={{ textAlign: 'center' }}>Nouvelle consultation ✦</Link>
+        </div>
+      </>
+    );
+  }
   if (consultation?.statut === 'en_attente') {
     return (
       <>
