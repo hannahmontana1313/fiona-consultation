@@ -558,8 +558,9 @@ function TiragesAdmin() {
 
       {selectedTirage && tirageSelectionne ? (
         <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ fontWeight: 500, fontSize: '15px', color: 'var(--vd)' }}>🔮 {tirageSelectionne.prenom}</div>
+          <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+  <div>
+    <div style={{ fontWeight: 500, fontSize: '15px', color: 'var(--vd)' }}>🔮 {tirageSelectionne.prenom}</div>
             <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
               Carte : <strong>{tirageSelectionne.carteNom || 'Non tirée'}</strong>
               {tirageSelectionne.telephone ? ' · Tel: ' + tirageSelectionne.telephone : ''}
