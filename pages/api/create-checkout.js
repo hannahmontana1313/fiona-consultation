@@ -46,22 +46,24 @@ export default async function handler(req, res) {
 },
     });
 
-    // Pré-créer la consultation en "pending" dans Firestore
-    await setDoc(doc(db, 'consultations', session.id), {
-      sessionId: session.id,
-      userId,
-      prenom,
-      domaine,
-      sujet,
-      message: message || '',
-      minutes,
-      tarif,
-      montantCentimes,
-      statut: 'pending', // pending → active → terminee
-      createdAt: serverTimestamp(),
-      paiement: 'stripe',
-      telephone: telephone || '',
-    });
+    // Pré-créer la consultation seulement si c'est une nouvelle
+if (!ancienConsultationId) {
+  await setDoc(doc(db, 'consultations', session.id), {
+    sessionId: session.id,
+    userId,
+    prenom,
+    domaine,
+    sujet,
+    message: message || '',
+    minutes,
+    tarif,
+    montantCentimes,
+    statut: 'pending',
+    createdAt: serverTimestamp(),
+    paiement: 'stripe',
+    telephone: telephone || '',
+  });
+}
 
     res.status(200).json({ sessionId: session.id });
   } catch (err) {
