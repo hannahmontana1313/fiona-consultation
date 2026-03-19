@@ -20,7 +20,7 @@ export default async function handler(req, res) {
             name: 'Tirage Lenormand express',
             description: '1 carte tirée + interprétation personnalisée par Fiona',
           },
-          unit_amount: 500,
+          unit_amount: Math.round((5 + 0.25) / (1 - 0.014) * 100),
         },
         quantity: 1,
       }],
