@@ -1,6 +1,3 @@
-Voici le code complet pour `pages/tirage.js` — copie tout et colle dans le nouveau fichier :
-
-```js
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { db } from '../lib/firebase';
@@ -260,6 +257,3 @@ export default function Tirage() {
     </>
   );
 }
-```
-
-Commite et dis-moi quand c'est fait, on crée ensuite le fichier de paiement ! 😊
