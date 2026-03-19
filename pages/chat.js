@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import {
   collection, doc, addDoc, onSnapshot, updateDoc,
-  query, orderBy, serverTimestamp, getDoc, increment,
+  query, orderBy, serverTimestamp, getDoc, increment, where,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../components/AuthContext';
@@ -55,19 +55,40 @@ export default function Chat() {
   }, [added, consultationId]);
 
   // Charger la consultation en temps réel
-  useEffect(() => {
-    if (!consultationId) return;
-    const unsub = onSnapshot(doc(db, 'consultations', consultationId), snap => {
-      if (!snap.exists()) return;
-      const data = snap.data();
-      setConsultation(data);
-      setSecrestantes(data.secondesRestantes ?? null);
-      setLoading(false);
+useEffect(() => {
+  if (!consultationId) return;
+  const unsub = onSnapshot(doc(db, 'consultations', consultationId), snap => {
+    if (!snap.exists()) return;
+    const data = snap.data();
+    setConsultation(data);
+    setSecrestantes(data.secondesRestantes ?? null);
+    setLoading(false);
+    if (data.statut === 'terminee') setBloque(true);
+    if (data.statut === 'en_attente' || data.statut === 'active') setBloque(false);
+  });
+  return unsub;
+}, [consultationId]);
 
-      if (data.statut === 'terminee') setBloque(true);
-    });
-    return unsub;
-  }, [consultationId]);
+// Surveiller si une nouvelle consultation est créée pour ce client
+useEffect(() => {
+  if (!user || !consultation) return;
+  if (consultation.statut !== 'terminee') return;
+  const q = query(
+    collection(db, 'consultations'),
+    where('userId', '==', user.uid),
+    where('statut', 'in', ['en_attente', 'active']),
+    orderBy('createdAt', 'desc')
+  );
+  const unsub = onSnapshot(q, snap => {
+    if (!snap.empty) {
+      const nouvelle = snap.docs[0];
+      if (nouvelle.id !== consultationId) {
+        router.push('/chat?consultation=' + nouvelle.id);
+      }
+    }
+  });
+  return unsub;
+}, [consultation?.statut, user]);
 
   // Charger les messages en temps réel
   useEffect(() => {
