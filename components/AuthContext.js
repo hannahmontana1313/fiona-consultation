@@ -21,7 +21,20 @@ export const AuthProvider = ({ children }) => {
       if (firebaseUser) {
         setUser(firebaseUser);
         const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (snap.exists()) setUserData(snap.data());
+        if (snap.exists()) {
+          setUserData(snap.data());
+        } else {
+          const newUserData = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            prenom: firebaseUser.displayName || '',
+            role: 'client',
+            createdAt: serverTimestamp(),
+            bloque: false,
+          };
+          await setDoc(doc(db, 'users', firebaseUser.uid), newUserData);
+          setUserData(newUserData);
+        }
       } else {
         setUser(null);
         setUserData(null);
