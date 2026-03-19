@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import Stars from '../components/Stars';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../components/AuthContext';
