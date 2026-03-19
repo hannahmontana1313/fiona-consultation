@@ -154,15 +154,23 @@ export default function Admin() {
   }, 3000);
 };
   const envoyerReponse = async () => {
-    if (!reponse.trim() || !selected) return;
+    if (!reponse.trim() || !selectedTirage) return;
     const texte = reponse.trim();
     setReponse('');
-    await addDoc(collection(db, 'consultations', selected, 'messages'), {
-      texte, auteur: 'admin', type: 'message', lu: true, createdAt: serverTimestamp(),
+    await addDoc(collection(db, 'tirages', selectedTirage, 'messages'), {
+      texte, auteur: 'admin', createdAt: serverTimestamp(),
     });
-    await updateDoc(doc(db, 'consultations', selected), {
+    await updateDoc(doc(db, 'tirages', selectedTirage), {
       lastMessageAdmin: texte, lastMessageAdminAt: serverTimestamp(),
     });
+    // Message automatique après la réponse
+    setTimeout(async () => {
+      await addDoc(collection(db, 'tirages', selectedTirage, 'messages'), {
+        texte: '✨ Si tu souhaites plus de détails ou approfondir un sujet, n\'hésite pas à prendre une consultation privée avec moi !',
+        auteur: 'admin',
+        createdAt: serverTimestamp(),
+      });
+    }, 2000);
   };
 
   const terminerConsultation = async (id) => {
