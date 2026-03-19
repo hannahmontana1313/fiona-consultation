@@ -61,8 +61,10 @@ export default function Reserver() {
           domaine: form.domaine,
           sujet: form.sujet,
           message: form.message,
-          minutes: dureeChoisie.minutes,
-          montant: prixWero,
+          minutes: String(dureeChoisie.minutes),
+          montant: String(prixWero),
+          userId: user.uid,
+          tarif: String(tarif),
         },
       });
       return;
