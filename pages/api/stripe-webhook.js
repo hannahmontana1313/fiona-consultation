@@ -30,11 +30,12 @@ export default async function handler(req, res) {
     const targetId = ancienConsultationId || session.id;
     try {
       await updateDoc(doc(db, 'consultations', targetId), {
-        statut: 'en_attente',
-        payeAt: serverTimestamp(),
-        secondesRestantes: parseInt(minutes) * 60,
-        montantPaye: session.amount_total,
-      });
+  statut: 'en_attente',
+  payeAt: serverTimestamp(),
+  secondesRestantes: parseInt(minutes) * 60,
+  montantPaye: session.amount_total,
+  prioritaire: ancienConsultationId ? false : (session.metadata.prioritaire === 'true'),
+});
     } catch (err) {
       console.error('Firestore update error:', err);
     }
