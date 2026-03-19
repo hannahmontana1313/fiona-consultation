@@ -32,6 +32,7 @@ export default function Reserver() {
   });
   const [dureeIdx, setDureeIdx] = useState(1);
   const [paiement, setPaiement] = useState('stripe');
+  const [prioritaire, setPrioritaire] = useState(false);
   const [loading, setLoading] = useState(false);
   const { ancien } = router.query;
   const [error, setError] = useState('');
