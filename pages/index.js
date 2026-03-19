@@ -1,3 +1,6 @@
+Voici le fichier `index.js` complet à copier-coller :
+
+```js
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import Stars from '../components/Stars';
