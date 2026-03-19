@@ -76,13 +76,15 @@ useEffect(() => {
       <Stars />
      <Navbar />
 
-      <div style={{
-        background: 'linear-gradient(135deg, rgba(42,26,74,0.9), rgba(123,94,167,0.85))',
-        color: '#fff', textAlign: 'center', padding: '12px 20px',
-        fontSize: '14px', lineHeight: 1.6, letterSpacing: '0.3px',
-      }}>
-        {messageDuJour}
-      </div>
+      {messageDuJour && (
+  <div style={{
+    background: 'linear-gradient(135deg, rgba(42,26,74,0.9), rgba(123,94,167,0.85))',
+    color: '#fff', textAlign: 'center', padding: '12px 20px',
+    fontSize: '14px', lineHeight: 1.6, letterSpacing: '0.3px',
+  }}>
+    {messageDuJour}
+  </div>
+)}
 
       <main style={{ paddingBottom: '4rem' }}>
         {/* Hero */}
