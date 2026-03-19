@@ -490,4 +490,50 @@ if (bloque && consultation?.statut === 'terminee' && messages.length > 0) {
       )}
     </>
   );
+{avisOpen && !avisEnvoye && (
+  <div style={{
+    position: 'fixed', inset: 0, background: 'rgba(42,26,74,0.5)',
+    zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: '1.25rem',
+  }}>
+    <div className="card" style={{ maxWidth: 380, width: '100%', padding: '2rem', textAlign: 'center' }}>
+      <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⭐</div>
+      <h3 style={{ fontFamily: "'Playfair Display',serif", color: 'var(--vd)', marginBottom: '0.5rem' }}>
+        Comment s'est passée ta consultation ?
+      </h3>
+      <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '1.5rem' }}>
+        Ton avis aide d'autres personnes à me faire confiance ✨
+      </p>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '1.5rem' }}>
+        {[1,2,3,4,5].map(n => (
+          <span key={n} onClick={() => setAvisNote(n)} style={{
+            fontSize: '2rem', cursor: 'pointer',
+            opacity: n <= avisNote ? 1 : 0.3,
+            transition: 'opacity 0.15s',
+          }}>⭐</span>
+        ))}
+      </div>
+      <textarea
+        value={avisTexte}
+        onChange={e => setAvisTexte(e.target.value)}
+        placeholder="Dis-moi ce que tu as pensé de la consultation..."
+        rows={3}
+        style={{
+          width: '100%', border: '1.5px solid var(--border)', borderRadius: 'var(--r)',
+          padding: '10px 14px', fontFamily: "'DM Sans',sans-serif", fontSize: '14px',
+          resize: 'none', outline: 'none', color: 'var(--txt)', marginBottom: '1rem',
+          boxSizing: 'border-box',
+        }}
+      />
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button onClick={() => setAvisOpen(false)} className="btn btn-outline" style={{ flex: 1 }}>
+          Plus tard
+        </button>
+        <button onClick={envoyerAvis} className="btn btn-primary" style={{ flex: 2 }}>
+          Envoyer mon avis ✦
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 }
