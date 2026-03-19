@@ -67,8 +67,8 @@ useEffect(() => {
     setConsultation(data);
     setSecrestantes(data.secondesRestantes ?? null);
     setLoading(false);
-    if (data.statut === 'terminee') setBloque(true);
-    if (data.statut === 'en_attente' || data.statut === 'active') setBloque(false);
+    if (data.statut === 'terminee') { setBloque(true); setAvisOpen(true); }
+if (data.statut === 'en_attente' || data.statut === 'active') setBloque(false);
   });
   return unsub;
 }, [consultationId]);
