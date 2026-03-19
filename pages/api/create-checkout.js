@@ -11,8 +11,8 @@ export default async function handler(req, res) {
 
   if (!minutes || !userId) return res.status(400).json({ error: 'Paramètres manquants' });
 
-  const prixBase = minutes * tarif;
-  const montantCentimes = Math.round((prixBase + 0.25) / (1 - 0.014) * 100);
+  const prixBase = minutes * tarif + (prioritaire ? 7 : 0);
+const montantCentimes = Math.round((prixBase + 0.25) / (1 - 0.014) * 100);
 
   try {
     // Créer la session Stripe
