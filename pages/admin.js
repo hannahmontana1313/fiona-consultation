@@ -178,8 +178,8 @@ export default function Admin() {
     return 'var(--v)';
   };
 
-  const actives = consultations.filter(c => c.statut === 'active');
-  const enAttente = consultations.filter(c => c.statut === 'en_attente');
+  const actives = consultations.filter(c => c.statut === 'active').sort((a, b) => (b.prioritaire ? 1 : 0) - (a.prioritaire ? 1 : 0));
+const enAttente = consultations.filter(c => c.statut === 'en_attente').sort((a, b) => (b.prioritaire ? 1 : 0) - (a.prioritaire ? 1 : 0));
   const terminees = consultations.filter(c => c.statut === 'terminee');
   const totalNonLus = consultations.reduce((acc, c) => acc + (c.messagesNonLus || 0), 0);
   const totalPaye = consultations
