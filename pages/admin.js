@@ -304,7 +304,10 @@ const enAttente = consultations.filter(c => c.statut === 'en_attente').sort((a, 
                 {enAttente.map(c => (
                   <div key={c.id} style={{ padding: '1rem 1.5rem', borderRadius: 'var(--r)', background: 'rgba(255,220,100,0.15)', border: '2px solid #F0C040', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <div>
-                      <div style={{ fontWeight: 600, color: 'var(--vd)' }}>Nouvelle demande - {c.prenom}</div>
+                      <div style={{ fontWeight: 600, color: 'var(--vd)' }}>
+  {c.prioritaire && <span style={{ color: '#F0C040', marginRight: '4px' }}>⭐ PRIORITAIRE</span>}
+  Nouvelle demande - {c.prenom}
+</div>
                       <div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '3px' }}>
                         {c.domaine} - {c.sujet} - {c.minutes} min - {c.paiement === 'wero' ? parseFloat(c.montant || 0).toFixed(2) + 'e via Wero' : ((c.montantPaye || 0) / 100).toFixed(2) + 'e via Stripe'} paye
                       </div>
