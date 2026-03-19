@@ -103,8 +103,7 @@ export default function Admin() {
       });
     });
     return unsub;
-  }, []);
-
+  }, [sonActif]);
   useEffect(() => {
     if (!selected) return;
     const q = query(
