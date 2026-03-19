@@ -30,7 +30,9 @@ export default async function handler(req, res) {
         },
         quantity: 1,
       }],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/chat?session_id={CHECKOUT_SESSION_ID}&uid=${userId}`,
+      success_url: ancienConsultationId 
+  ? `${process.env.NEXT_PUBLIC_APP_URL}/chat?consultation=${ancienConsultationId}`
+  : `${process.env.NEXT_PUBLIC_APP_URL}/chat?session_id={CHECKOUT_SESSION_ID}&uid=${userId}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/reserver`,
       metadata: {
   userId,
