@@ -29,20 +29,17 @@ export default async function handler(req, res) {
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    const { userId, minutes } = session.metadata;
-
-try {
-  await updateDoc(doc(db, 'consultations', session.id), {
-        statut: 'en_attente',
-        payeAt: serverTimestamp(),
-        secondesRestantes: parseInt(minutes) * 60,
-        montantPaye: session.amount_total,
-      });
-    } catch (err) {
-      console.error('Firestore update error:', err);
-    }
+  const session = event.data.object;
+  const { userId, minutes, ancienConsultationId } = session.metadata;
+  const targetId = ancienConsultationId || session.id;
+  try {
+    await updateDoc(doc(db, 'consultations', targetId), {
+      statut: 'en_attente',
+      payeAt: serverTimestamp(),
+      secondesRestantes: parseInt(minutes) * 60,
+      montantPaye: session.amount_total,
+    });
+  } catch (err) {
+    console.error('Firestore update error:', err);
   }
-
-  res.status(200).json({ received: true });
 }
