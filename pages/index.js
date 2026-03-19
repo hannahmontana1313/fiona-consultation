@@ -6,6 +6,8 @@ import { useAuth } from '../components/AuthContext';
 import { getTarifActuel } from '../lib/stripe';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export default function Home() {
   const { user } = useAuth();
