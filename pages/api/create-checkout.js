@@ -33,14 +33,15 @@ export default async function handler(req, res) {
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/chat?session_id={CHECKOUT_SESSION_ID}&uid=${userId}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/reserver`,
       metadata: {
-        userId,
-        prenom,
-        domaine,
-        sujet,
-        message: message?.substring(0, 500) || '',
-        minutes: String(minutes),
-        tarif: String(tarif),
-      },
+  userId,
+  prenom,
+  domaine,
+  sujet,
+  message: message?.substring(0, 500) || '',
+  minutes: String(minutes),
+  tarif: String(tarif),
+  consultationId: session.id,
+},
     });
 
     // Pré-créer la consultation en "pending" dans Firestore
