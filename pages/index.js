@@ -6,39 +6,24 @@ import { useAuth } from '../components/AuthContext';
 import { getTarifActuel } from '../lib/stripe';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 
 export default function Home() {
   const { user } = useAuth();
   const tarif = getTarifActuel();
-const isWeekend = tarif === 5;
-const [avis, setAvis] = useState([]);
+  const isWeekend = tarif === 5;
+  const [avis, setAvis] = useState([]);
 
-useEffect(() => {
-  const q = query(
-    collection(db, 'avis'),
-    where('visible', '==', true),
-    orderBy('createdAt', 'desc')
-  );
-  const unsub = onSnapshot(q, snap => {
-    setAvis(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-  });
-  return unsub;
-}, []);
-const [avis, setAvis] = useState([]);
-
-useEffect(() => {
-  const q = query(
-    collection(db, 'avis'),
-    where('visible', '==', true),
-    orderBy('createdAt', 'desc')
-  );
-  const unsub = onSnapshot(q, snap => {
-    setAvis(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-  });
-  return unsub;
-}, []);
+  useEffect(() => {
+    const q = query(
+      collection(db, 'avis'),
+      where('visible', '==', true),
+      orderBy('createdAt', 'desc')
+    );
+    const unsub = onSnapshot(q, snap => {
+      setAvis(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return unsub;
+  }, []);
 
   return (
     <>
@@ -187,7 +172,8 @@ useEffect(() => {
           }}>
             ⚠️ Le temps démarre dès l'ouverture du chat · Le chrono ne s'arrête jamais · Aucun remboursement après démarrage
           </div>
-              {/* Témoignages */}
+
+          {/* Témoignages */}
           {avis.length > 0 && (
             <section className="card" style={{ padding: '2.5rem', marginTop: '1.5rem' }}>
               <h2 style={{
