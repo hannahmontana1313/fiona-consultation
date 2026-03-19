@@ -320,6 +320,7 @@ export default function Admin() {
         )}
 
         {onglet === 'conversations' && (
+        <div>
         {/* Demandes en attente */}
         {enAttente.length > 0 && (
           <div style={{ marginBottom: '1rem' }}>
@@ -480,7 +481,8 @@ export default function Admin() {
             </div>
           )}
         </div>
-      </div>
+       </div>
+        </div>
         )}
     </>
   );
