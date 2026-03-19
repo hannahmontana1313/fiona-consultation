@@ -22,11 +22,12 @@ export default function Historique() {
     const load = async () => {
       const q = query(
         collection(db, 'consultations'),
-        where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc')
+        where('userId', '==', user.uid)
       );
       const snap = await getDocs(q);
-      setConsultations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      setConsultations(data);
       setFetching(false);
     };
     load();

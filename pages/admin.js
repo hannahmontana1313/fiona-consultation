@@ -25,7 +25,7 @@ export default function Admin() {
   const timerIntervals = useRef({});
 
   useEffect(() => {
-    notifSound.current = typeof Audio !== 'undefined' ? new Audio('/notification.mp3') : null;
+    notifSound.current = typeof Audio !== 'undefined' ? new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3') : null;
   }, []);
 
   useEffect(() => {

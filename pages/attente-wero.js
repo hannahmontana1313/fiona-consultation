@@ -21,10 +21,12 @@ export default function AttenteWero() {
       prenom, domaine, sujet, message,
       minutes: parseInt(minutes),
       montant: parseFloat(montant),
-      statut: 'pending',
+      statut: 'en_attente',
       paiement: 'wero',
       createdAt: serverTimestamp(),
       secondesRestantes: parseInt(minutes) * 60,
+      messagesNonLus: 0,
+      lastMessage: `Paiement Wero en attente de confirmation`,
     });
     setEnregistre(true);
   }, [user, minutes]);
