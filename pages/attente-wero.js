@@ -9,7 +9,7 @@ import { useAuth } from '../components/AuthContext';
 export default function AttenteWero() {
   const router = useRouter();
   const { user } = useAuth();
-  const { prenom, domaine, sujet, message, minutes, montant, userId, tarif } = router.query;
+  const { prenom, domaine, sujet, message, minutes, montant, userId, tarif, telephone } = router.query;
   const [enregistre, setEnregistre] = useState(false);
 
   useEffect(() => {
@@ -25,6 +25,7 @@ export default function AttenteWero() {
       paiement: 'wero',
       createdAt: serverTimestamp(),
       secondesRestantes: parseInt(minutes) * 60,
+      telephone: telephone || '',
       messagesNonLus: 0,
       lastMessage: `Paiement Wero en attente de confirmation`,
     });
