@@ -136,10 +136,10 @@ export default function Reserver() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Ton numéro de téléphone (optionnel)</label>
+              <label className="form-label">Ton numéro de téléphone</label>
               <input className="input" name="telephone" type="tel" value={form.telephone}
                 onChange={e => handleField('telephone', e.target.value)}
-                placeholder="06, 07 ou numéro international..." />
+                placeholder="06, 07 ou numéro international..." required />
             </div>
             <div className="form-group">
               <label className="form-label">Domaine de ta consultation</label>
