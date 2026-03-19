@@ -261,7 +261,7 @@ if (bloque && consultation?.statut === 'terminee' && messages.length > 0) {
               );
             })}
           </div>
-          <Link href="/reserver" className="btn btn-primary" style={{ textAlign: 'center' }}>Nouvelle consultation ✦</Link>
+          <Link href={`/reserver?ancien=${consultationId}`} className="btn btn-primary" style={{ textAlign: 'center' }}>Nouvelle consultation ✦</Link>
         </div>
       </>
     );
