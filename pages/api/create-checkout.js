@@ -7,7 +7,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { minutes, tarif, userId, prenom, telephone, domaine, sujet, message, ancienConsultationId } = req.body;
+  const { minutes, tarif, userId, prenom, telephone, domaine, sujet, message, ancienConsultationId, prioritaire } = req.body;
 
   if (!minutes || !userId) return res.status(400).json({ error: 'Paramètres manquants' });
 
