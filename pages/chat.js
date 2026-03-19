@@ -25,6 +25,7 @@ export default function Chat() {
   const [bloque, setBloque] = useState(false);
   const [alertes, setAlertes] = useState(new Set());
   const [ajoutTempsOpen, setAjoutTempsOpen] = useState(false);
+  const [adminIsTyping, setAdminIsTyping] = useState(false);
   const [ajoutMinutes, setAjoutMinutes] = useState(10);
   const [loadingAjout, setLoadingAjout] = useState(false);
   const [avisOpen, setAvisOpen] = useState(false);
