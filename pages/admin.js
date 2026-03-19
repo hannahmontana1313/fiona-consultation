@@ -431,7 +431,7 @@ const enAttente = consultations.filter(c => c.statut === 'en_attente').sort((a, 
                   </div>
 
                   <div style={{ padding: '10px 1.25rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '8px', alignItems: 'flex-end', background: 'rgba(255,255,255,0.95)' }}>
-                    <textarea value={reponse} onChange={e => setReponse(e.target.value)}
+                    <textarea value={reponse} onChange={e => { setReponse(e.target.value); handleTyping(); }}
                       onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyerReponse(); } }}
                       placeholder={'Repondre a ' + (selectedData.prenom || '') + '...'} rows={2}
                       style={{ flex: 1, border: '1.5px solid var(--border)', borderRadius: 'var(--r)', padding: '10px 14px', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', resize: 'none', outline: 'none', color: 'var(--txt)', background: 'var(--bgs)' }} />
