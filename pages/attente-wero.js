@@ -11,6 +11,7 @@ export default function AttenteWero() {
   const { user } = useAuth();
   const { prenom, domaine, sujet, message, minutes, montant, userId, tarif, telephone, tirage } = router.query;
   const [enregistre, setEnregistre] = useState(false);
+  const [tirageId, setTirageId] = useState(null);
 
   useEffect(() => {
     if (!router.isReady || !user || enregistre) return;
