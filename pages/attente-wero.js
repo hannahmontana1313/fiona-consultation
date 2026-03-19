@@ -16,19 +16,19 @@ export default function AttenteWero() {
     if (!router.isReady || !user || enregistre) return;
     const id = `wero_${user.uid}_${Date.now()}`;
     if (tirage === 'true') {
-      setDoc(doc(db, 'tirages', id), {
-        sessionId: id,
-        userId: user.uid,
-        prenom,
-        telephone: telephone || '',
-        statut: 'en_attente',
-        paiement: 'wero',
-        createdAt: serverTimestamp(),
-        messagesNonLus: 0,
-      }).then(() => {
-        setEnregistre(true);
-        router.push('/tirage?tirage_id=' + id);
-      });
+  setDoc(doc(db, 'tirages', id), {
+    sessionId: id,
+    userId: user.uid,
+    prenom,
+    telephone: telephone || '',
+    statut: 'en_attente',
+    paiement: 'wero',
+    createdAt: serverTimestamp(),
+    messagesNonLus: 0,
+  }).then(() => {
+    setEnregistre(true);
+    setTirageId(id);
+  });
     } else {
       if (!minutes) return;
       setDoc(doc(db, 'consultations', id), {
