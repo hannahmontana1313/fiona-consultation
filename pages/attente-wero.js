@@ -9,27 +9,62 @@ import { useAuth } from '../components/AuthContext';
 export default function AttenteWero() {
   const router = useRouter();
   const { user } = useAuth();
-  const { prenom, domaine, sujet, message, minutes, montant, userId, tarif, telephone } = router.query;
+  const { prenom, domaine, sujet, message, minutes, montant, userId, tarif, telephone, tirage } = router.query;
   const [enregistre, setEnregistre] = useState(false);
 
   useEffect(() => {
-    if (!router.isReady || !user || !minutes || enregistre) return;
+    if (!router.isReady || !user || enregistre) return;
     const id = `wero_${user.uid}_${Date.now()}`;
-    setDoc(doc(db, 'consultations', id), {
-      consultationId: id,
-      userId: user.uid,
-      prenom, domaine, sujet, message,
-      minutes: parseInt(minutes),
-      montant: parseFloat(montant),
-      statut: 'en_attente',
-      paiement: 'wero',
-      createdAt: serverTimestamp(),
-      secondesRestantes: parseInt(minutes) * 60,
-      telephone: telephone || '',
-      messagesNonLus: 0,
-      lastMessage: `Paiement Wero en attente de confirmation`,
-    });
-    setEnregistre(true);
+    if (tirage === 'true') {
+      setDoc(doc(db, 'tirages', id), {
+        sessionId: id,
+        userId: user.uid,
+        prenom,
+        telephone: telephone || '',
+        statut: 'en_attente',
+        paiement: 'wero',
+        createdAt: serverTimestamp(),
+        messagesNonLus: 0,
+      }).then(() => {
+        setEnregistre(true);
+        router.push('/tirage?tirage_id=' + id);
+      });
+    } else {
+      setDoc(doc(db, 'consultations', id), {
+        consultationId: id,
+        userId: user.uid,
+        prenom, domaine, sujet, message,
+        minutes: parseInt(minutes),
+        montant: parseFloat(montant),
+        statut: 'en_attente',
+        paiement: 'wero',
+        createdAt: serverTimestamp(),
+        secondesRestantes: parseInt(minutes) * 60,
+        telephone: telephone || '',
+        messagesNonLus: 0,
+        lastMessage: `Paiement Wero en attente de confirmation`,
+      });
+      setEnregistre(true);
+    }
+  }, [user, router.isReady]);
+  router.push('/tirage?tirage_id=' + id);
+} else {
+  setDoc(doc(db, 'consultations', id), {
+    consultationId: id,
+    userId: user.uid,
+    prenom, domaine, sujet, message,
+    minutes: parseInt(minutes),
+    montant: parseFloat(montant),
+    statut: 'en_attente',
+    paiement: 'wero',
+    createdAt: serverTimestamp(),
+    secondesRestantes: parseInt(minutes) * 60,
+    telephone: telephone || '',
+    messagesNonLus: 0,
+    lastMessage: `Paiement Wero en attente de confirmation`,
+  });
+  setEnregistre(true);
+}
   }, [user, minutes]);
 
   return (
