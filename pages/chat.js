@@ -140,7 +140,7 @@ export default function Chat() {
     }, 1000);
 
     return () => clearInterval(timerRef.current);
-  }, [secondesRestantes !== null, bloque]);
+ }, [secondesRestantes !== null, bloque, consultation?.statut]);
 
   const formatTimer = (secs) => {
     if (secs === null) return '--:--';
