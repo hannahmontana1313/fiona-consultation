@@ -235,7 +235,7 @@ export default function Admin() {
                 <div>
                   <div style={{ fontWeight: 600, color: 'var(--vd)' }}>⏳ Nouvelle demande — {c.prenom}</div>
                   <div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '3px' }}>
-                    {c.domaine} · {c.sujet} · {c.minutes} min · {((c.montantPaye || 0) / 100).toFixed(2)}€ payé
+                    {c.domaine} · {c.sujet} · {c.minutes} min · {c.paiement === 'wero' ? `${parseFloat(c.montant || 0).toFixed(2)}€` : `${((c.montantPaye || 0) / 100).toFixed(2)}€`} payé
                   </div>
                   {c.message && <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px', fontStyle: 'italic' }}>"{c.message}"</div>}
                 </div>
