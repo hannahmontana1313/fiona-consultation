@@ -37,9 +37,16 @@ export default function Reserver() {
 
   useEffect(() => {
     if (!user) { router.push('/inscription'); return; }
-    if (userData?.prenom) setForm(f => ({ ...f, prenom: userData.prenom }));
-    if (userData?.telephone) setForm(f => ({ ...f, telephone: userData.telephone }));
-  }, [user, userData]);
+  }, [user]);
+
+  useEffect(() => {
+    if (!userData) return;
+    setForm(f => ({
+      ...f,
+      prenom: userData.prenom || f.prenom,
+      telephone: userData.telephone || f.telephone,
+    }));
+  }, [userData]);
 
   const handle = e => setForm({ ...f => ({ ...f, [e.target.name]: e.target.value }) });
   const handleField = (name, val) => setForm(f => ({ ...f, [name]: val }));
