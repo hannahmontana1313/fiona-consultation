@@ -24,9 +24,11 @@ export default function Historique() {
         collection(db, 'consultations'),
         where('userId', '==', user.uid)
       );
-      const snap = await getDocs(q);
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      const snap = await getDocs(collection(db, 'consultations'));
+      const data = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(c => c.userId === user.uid)
+        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setConsultations(data);
       setFetching(false);
     };
