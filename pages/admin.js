@@ -141,6 +141,18 @@ export default function Admin() {
     });
   };
 
+  const handleTyping = async () => {
+  if (!selected) return;
+  await updateDoc(doc(db, 'consultations', selected), {
+    adminIsTyping: true,
+    adminTypingAt: serverTimestamp(),
+  });
+  setTimeout(async () => {
+    await updateDoc(doc(db, 'consultations', selected), {
+      adminIsTyping: false,
+    });
+  }, 3000);
+};
   const envoyerReponse = async () => {
     if (!reponse.trim() || !selected) return;
     const texte = reponse.trim();
