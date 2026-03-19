@@ -44,7 +44,19 @@ const MESSAGES_DU_JOUR = [
   "🌙 La sagesse des anciens s'exprime à travers les symboles. Laisse-les te guider.",
 ];
 
-const messageDuJour = MESSAGES_DU_JOUR[new Date().getDate() % MESSAGES_DU_JOUR.length];
+const [messageDuJour, setMessageDuJour] = useState('');
+
+useEffect(() => {
+  fetch('/api/message-du-jour')
+    .then(r => r.json())
+    .then(data => {
+      if (data.message) setMessageDuJour(data.message);
+    })
+    .catch(() => {
+      // Fallback sur le tableau statique si l'API échoue
+      setMessageDuJour(MESSAGES_DU_JOUR[new Date().getDate() % MESSAGES_DU_JOUR.length]);
+    });
+}, []);
   const [avis, setAvis] = useState([]);
 
 useEffect(() => {
