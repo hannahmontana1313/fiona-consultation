@@ -56,7 +56,7 @@ export default function Reserver() {
   const dureeChoisie = DUREES[dureeIdx];
   const prixStripe = calculerPrix(dureeChoisie.minutes, true);
   const prixWero = calculerPrix(dureeChoisie.minutes, false);
-  const prix = paiement === 'stripe' ? prixStripe : prixWero;
+ const prix = (paiement === 'stripe' ? prixStripe : prixWero) + (prioritaire ? 7 : 0);
 
   const handlePayer = async () => {
     if (!form.sujet.trim()) return setError('Merci d\'indiquer ton sujet.');
