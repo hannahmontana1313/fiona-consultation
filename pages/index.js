@@ -1,3 +1,4 @@
+import Footer from '../components/Footer';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import Stars from '../components/Stars';
@@ -273,6 +274,7 @@ export default function Home() {
           )}
         </div>
       </main>
+            <Footer />
     </>
   );
 }
