@@ -30,6 +30,19 @@ export default function AttenteWero() {
     setEnregistre(true);
     setTirageId(id);
   });
+  setDoc(doc(db, 'tirages', id), {
+    sessionId: id,
+    userId: user.uid,
+    prenom,
+    telephone: telephone || '',
+    statut: 'en_attente',
+    paiement: 'wero',
+    createdAt: serverTimestamp(),
+    messagesNonLus: 0,
+  }).then(() => {
+    setEnregistre(true);
+    setTirageId(id);
+  });
     } else {
       if (!minutes) return;
       setDoc(doc(db, 'consultations', id), {
