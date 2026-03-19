@@ -104,14 +104,43 @@ export default function TirageReserver() {
 
             {error && <p className="form-error" style={{ marginBottom: '1rem' }}>{error}</p>}
 
-            <button
-              onClick={handlePayer}
-              disabled={loading}
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '14px', fontSize: '15px' }}
-            >
-              {loading ? 'Redirection…' : '🔮 Payer 5€ & Tirer ma carte →'}
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+  <button
+    onClick={handlePayer}
+    disabled={loading}
+    className="btn btn-primary"
+    style={{ width: '100%', padding: '14px', fontSize: '15px' }}
+  >
+    {loading ? 'Redirection…' : '💳 Payer 5€ par carte →'}
+  </button>
+  <div onClick={() => router.push({
+    pathname: '/attente-wero',
+    query: {
+      prenom,
+      telephone,
+      domaine: 'Tirage Lenormand',
+      sujet: 'Tirage express',
+      message: '',
+      minutes: '0',
+      montant: '5',
+      userId: user?.uid,
+      tarif: '0',
+      tirage: 'true',
+    },
+  })} style={{
+    padding: '14px', borderRadius: 'var(--r)',
+    border: '1.5px solid var(--border)',
+    background: 'rgba(255,255,255,0.7)',
+    cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'center',
+    justifyContent: 'center',
+  }}>
+    <span style={{ fontSize: '1.2rem' }}>📱</span>
+    <div>
+      <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--vd)' }}>Payer 5€ via Wero</div>
+      <div style={{ fontSize: '11px', color: 'var(--muted)' }}>06 86 09 44 38 · Sans frais</div>
+    </div>
+  </div>
+</div>
           </div>
         </div>
       </div>
