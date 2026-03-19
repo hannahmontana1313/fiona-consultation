@@ -241,7 +241,7 @@ useEffect(() => {
       </div>
     );
   }
-if (consultation?.statut === 'terminee' && messages.length > 0) {
+if (bloque && consultation?.statut === 'terminee' && messages.length > 0) {
     return (
       <>
         <Stars />
