@@ -142,37 +142,28 @@ export default function Admin() {
   };
 
   const handleTyping = async () => {
-  if (!selected) return;
-  await updateDoc(doc(db, 'consultations', selected), {
-    adminIsTyping: true,
-    adminTypingAt: serverTimestamp(),
-  });
-  setTimeout(async () => {
+    if (!selected) return;
     await updateDoc(doc(db, 'consultations', selected), {
-      adminIsTyping: false,
+      adminIsTyping: true,
+      adminTypingAt: serverTimestamp(),
     });
-  }, 3000);
-};
-  const envoyerReponse = async () => {
-    if (!reponse.trim() || !selectedTirage) return;
-    const texte = reponse.trim();
-    setReponse('');
-    await addDoc(collection(db, 'tirages', selectedTirage, 'messages'), {
-      texte, auteur: 'admin', createdAt: serverTimestamp(),
-    });
-    await updateDoc(doc(db, 'tirages', selectedTirage), {
-      lastMessageAdmin: texte, lastMessageAdminAt: serverTimestamp(),
-    });
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    await addDoc(collection(db, 'tirages', selectedTirage, 'messages'), {
-      texte: '✨ Si tu souhaites plus de détails ou approfondir un sujet, n\'hésite pas à prendre une consultation privée avec moi !',
-      auteur: 'admin',
-      createdAt: serverTimestamp(),
-    });
+    setTimeout(async () => {
+      await updateDoc(doc(db, 'consultations', selected), {
+        adminIsTyping: false,
+      });
+    }, 3000);
   };
 
-  const terminerTirage = async (id) => {
-    await updateDoc(doc(db, 'tirages', id), { statut: 'termine' });
+  const envoyerReponse = async () => {
+    if (!reponse.trim() || !selected) return;
+    const texte = reponse.trim();
+    setReponse('');
+    await addDoc(collection(db, 'consultations', selected, 'messages'), {
+      texte, auteur: 'admin', type: 'message', lu: true, createdAt: serverTimestamp(),
+    });
+    await updateDoc(doc(db, 'consultations', selected), {
+      lastMessageAdmin: texte, lastMessageAdminAt: serverTimestamp(),
+    });
   };
 
   const terminerConsultation = async (id) => {
@@ -201,7 +192,7 @@ export default function Admin() {
   };
 
   const actives = consultations.filter(c => c.statut === 'active').sort((a, b) => (b.prioritaire ? 1 : 0) - (a.prioritaire ? 1 : 0));
-const enAttente = consultations.filter(c => c.statut === 'en_attente').sort((a, b) => (b.prioritaire ? 1 : 0) - (a.prioritaire ? 1 : 0));
+  const enAttente = consultations.filter(c => c.statut === 'en_attente').sort((a, b) => (b.prioritaire ? 1 : 0) - (a.prioritaire ? 1 : 0));
   const terminees = consultations.filter(c => c.statut === 'terminee');
   const totalNonLus = consultations.reduce((acc, c) => acc + (c.messagesNonLus || 0), 0);
   const totalPaye = consultations
@@ -276,26 +267,26 @@ const enAttente = consultations.filter(c => c.statut === 'en_attente').sort((a, 
           <button onClick={() => setOnglet('contacts')} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === 'contacts' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === 'contacts' ? '#fff' : 'var(--muted)', border: onglet === 'contacts' ? 'none' : '1px solid var(--border)' }}>
             Mes clients
           </button>
-              <button onClick={() => setOnglet('avis')} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === 'avis' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === 'avis' ? '#fff' : 'var(--muted)', border: onglet === 'avis' ? 'none' : '1px solid var(--border)' }}>
-  Avis clients
-</button>
-    <button onClick={() => setOnglet('tirages')} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === 'tirages' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === 'tirages' ? '#fff' : 'var(--muted)', border: onglet === 'tirages' ? 'none' : '1px solid var(--border)' }}>
-  🔮 Tirages
-</button>
+          <button onClick={() => setOnglet('avis')} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === 'avis' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === 'avis' ? '#fff' : 'var(--muted)', border: onglet === 'avis' ? 'none' : '1px solid var(--border)' }}>
+            Avis clients
+          </button>
+          <button onClick={() => setOnglet('tirages')} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === 'tirages' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === 'tirages' ? '#fff' : 'var(--muted)', border: onglet === 'tirages' ? 'none' : '1px solid var(--border)' }}>
+            🔮 Tirages
+          </button>
         </div>
 
-       {onglet === 'tirages' && (
-  <TiragesAdmin />
-)}
-{onglet === 'avis' && (
-  <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', overflow: 'hidden' }}>
-    <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
-      <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.2rem', color: 'var(--vd)' }}>Avis clients</h2>
-    </div>
-    <AvisAdmin />
-  </div>
-)}
-{onglet === 'contacts' && (
+        {onglet === 'tirages' && <TiragesAdmin />}
+
+        {onglet === 'avis' && (
+          <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+              <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.2rem', color: 'var(--vd)' }}>Avis clients</h2>
+            </div>
+            <AvisAdmin />
+          </div>
+        )}
+
+        {onglet === 'contacts' && (
           <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', overflow: 'hidden' }}>
             <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
               <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.2rem', color: 'var(--vd)' }}>Mes clients</h2>
@@ -333,9 +324,9 @@ const enAttente = consultations.filter(c => c.statut === 'en_attente').sort((a, 
                   <div key={c.id} style={{ padding: '1rem 1.5rem', borderRadius: 'var(--r)', background: 'rgba(255,220,100,0.15)', border: '2px solid #F0C040', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <div>
                       <div style={{ fontWeight: 600, color: 'var(--vd)' }}>
-  {c.prioritaire && <span style={{ color: '#F0C040', marginRight: '4px' }}>⭐ PRIORITAIRE</span>}
-  Nouvelle demande - {c.prenom}
-</div>
+                        {c.prioritaire && <span style={{ color: '#F0C040', marginRight: '4px' }}>⭐ PRIORITAIRE</span>}
+                        Nouvelle demande - {c.prenom}
+                      </div>
                       <div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '3px' }}>
                         {c.domaine} - {c.sujet} - {c.minutes} min - {c.paiement === 'wero' ? parseFloat(c.montant || 0).toFixed(2) + 'e via Wero' : ((c.montantPaye || 0) / 100).toFixed(2) + 'e via Stripe'} paye
                       </div>
@@ -362,9 +353,9 @@ const enAttente = consultations.filter(c => c.statut === 'en_attente').sort((a, 
                     <div key={c.id} onClick={() => setSelected(c.id)} style={{ padding: '0.85rem', borderRadius: 'var(--r)', cursor: 'pointer', marginBottom: '4px', position: 'relative', transition: 'all 0.15s', background: selected === c.id ? 'rgba(123,94,167,0.1)' : 'transparent', border: selected === c.id ? '1px solid var(--vl)' : '1px solid transparent' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                         <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--vd)' }}>
-  {c.prioritaire && <span style={{ color: '#F0C040', marginRight: '4px' }}>⭐</span>}
-  {c.prenom}
-</div>
+                          {c.prioritaire && <span style={{ color: '#F0C040', marginRight: '4px' }}>⭐</span>}
+                          {c.prenom}
+                        </div>
                         <div style={{ fontSize: '12px', fontWeight: 600, color: timerColor(c.id) }}>
                           {c.statut === 'active' ? formatTimer(c.id) : c.statut === 'en_attente' ? 'Attente' : 'OK'}
                         </div>
@@ -452,7 +443,7 @@ const enAttente = consultations.filter(c => c.statut === 'en_attente').sort((a, 
                       placeholder={'Repondre a ' + (selectedData.prenom || '') + '...'} rows={2}
                       style={{ flex: 1, border: '1.5px solid var(--border)', borderRadius: 'var(--r)', padding: '10px 14px', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', resize: 'none', outline: 'none', color: 'var(--txt)', background: 'var(--bgs)' }} />
                     <button onClick={envoyerReponse} style={{ width: 42, height: 42, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg, var(--v), var(--pd))', color: '#fff', cursor: 'pointer', fontSize: '16px', boxShadow: '0 4px 12px rgba(123,94,167,0.35)' }}>
-                      up
+                      ↑
                     </button>
                   </div>
                 </div>
@@ -469,6 +460,7 @@ const enAttente = consultations.filter(c => c.statut === 'en_attente').sort((a, 
     </>
   );
 }
+
 function AvisAdmin() {
   const [avis, setAvis] = useState([]);
   useEffect(() => {
@@ -502,6 +494,7 @@ function AvisAdmin() {
     </div>
   );
 }
+
 function TiragesAdmin() {
   const [tirages, setTirages] = useState([]);
   const [selectedTirage, setSelectedTirage] = useState(null);
@@ -537,6 +530,16 @@ function TiragesAdmin() {
     await updateDoc(doc(db, 'tirages', selectedTirage), {
       lastMessageAdmin: texte, lastMessageAdminAt: serverTimestamp(),
     });
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    await addDoc(collection(db, 'tirages', selectedTirage, 'messages'), {
+      texte: '✨ Si tu souhaites plus de détails ou approfondir un sujet, n\'hésite pas à prendre une consultation privée avec moi !',
+      auteur: 'admin',
+      createdAt: serverTimestamp(),
+    });
+  };
+
+  const terminerTirage = async (id) => {
+    await updateDoc(doc(db, 'tirages', id), { statut: 'termine' });
   };
 
   const tirageSelectionne = tirages.find(t => t.id === selectedTirage);
@@ -559,17 +562,21 @@ function TiragesAdmin() {
       {selectedTirage && tirageSelectionne ? (
         <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-  <div>
-    <div style={{ fontWeight: 500, fontSize: '15px', color: 'var(--vd)' }}>🔮 {tirageSelectionne.prenom}</div>
-            <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
-              Carte : <strong>{tirageSelectionne.carteNom || 'Non tirée'}</strong>
-              {tirageSelectionne.telephone ? ' · Tel: ' + tirageSelectionne.telephone : ''}
-            </div>
-            {tirageSelectionne.question && (
-              <div style={{ marginTop: '8px', padding: '8px 12px', background: 'rgba(123,94,167,0.06)', borderRadius: 'var(--r)', fontSize: '13px', color: 'var(--vd)', fontStyle: 'italic' }}>
-                Question : "{tirageSelectionne.question}"
+            <div>
+              <div style={{ fontWeight: 500, fontSize: '15px', color: 'var(--vd)' }}>🔮 {tirageSelectionne.prenom}</div>
+              <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
+                Carte : <strong>{tirageSelectionne.carteNom || 'Non tirée'}</strong>
+                {tirageSelectionne.telephone ? ' · Tel: ' + tirageSelectionne.telephone : ''}
               </div>
-            )}
+              {tirageSelectionne.question && (
+                <div style={{ marginTop: '8px', padding: '8px 12px', background: 'rgba(123,94,167,0.06)', borderRadius: 'var(--r)', fontSize: '13px', color: 'var(--vd)', fontStyle: 'italic' }}>
+                  Question : "{tirageSelectionne.question}"
+                </div>
+              )}
+            </div>
+            <button onClick={() => terminerTirage(selectedTirage)} style={{ padding: '6px 14px', borderRadius: '50px', border: '1px solid #E0B0C0', background: 'rgba(200,60,80,0.06)', color: '#A02040', cursor: 'pointer', fontSize: '12px' }}>
+              Terminer
+            </button>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {messages.map(msg => {
