@@ -4,7 +4,7 @@ import Stars from '../components/Stars';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../components/AuthContext';
 import { getTarifActuel } from '../lib/stripe';
-import { collection, query, where, onSnapshot, orderBy, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 export default function Home() {
@@ -14,6 +14,9 @@ export default function Home() {
   const [avis, setAvis] = useState([]);
   const [fidelite, setFidelite] = useState(null);
   const [statutFiona, setStatutFiona] = useState('En ligne');
+  const [cadeauAnniversaire, setCadeauAnniversaire] = useState(null);
+const [ticketGratte, setTicketGratte] = useState(false);
+const [ticketRevele, setTicketRevele] = useState(false);
 
   const MESSAGES_DU_JOUR = [
     "✨ Les astres s'alignent aujourd'hui pour révéler ce que ton cœur pressent déjà...",
@@ -59,6 +62,35 @@ export default function Home() {
     };
     fetchFidelite();
   }, [user]);
+  
+  useEffect(() => {
+  if (!user) return;
+  const verifierAnniversaire = async () => {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    if (!snap.exists()) return;
+    const data = snap.data();
+    if (!data.dateNaissance) return;
+
+    const today = new Date();
+    const naissance = new Date(data.dateNaissance);
+    const estAnniversaire = (
+      today.getDate() === naissance.getDate() &&
+      today.getMonth() === naissance.getMonth()
+    );
+    if (!estAnniversaire) return;
+
+    // Vérifier si le cadeau a déjà été utilisé aujourd'hui
+    const cadeauRef = doc(db, 'cadeauxAnniversaire', user.uid);
+    const cadeauSnap = await getDoc(cadeauRef);
+    const anneeEnCours = today.getFullYear();
+
+    if (cadeauSnap.exists() && cadeauSnap.data().annee === anneeEnCours) return;
+
+    // Cadeau disponible !
+    setCadeauAnniversaire({ prenom: data.prenom });
+  };
+  verifierAnniversaire();
+}, [user]);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'statut'), snap => {
@@ -146,6 +178,117 @@ export default function Home() {
           <Link href="/fidelite" style={{ marginLeft: '8px', color: 'var(--v)', fontWeight: 600, textDecoration: 'underline' }}>
             Voir mes avantages
           </Link>
+        </div>
+      )}
+
+      {cadeauAnniversaire && !ticketGratte && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(255,192,64,0.2), rgba(123,94,167,0.2))',
+          borderBottom: '2px solid #F0C040',
+          textAlign: 'center', padding: '1.5rem 20px',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🎂</div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.4rem', color: 'var(--vd)', marginBottom: '8px' }}>
+            Joyeux anniversaire {cadeauAnniversaire.prenom} ! 🎉
+          </div>
+          <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '1rem' }}>
+            J'ai un cadeau spécial pour toi aujourd'hui ✨
+          </p>
+          <button onClick={() => setTicketGratte(true)} style={{
+            padding: '12px 28px', borderRadius: '50px',
+            background: 'linear-gradient(135deg, #F0C040, #E08020)',
+            color: '#fff', border: 'none', cursor: 'pointer',
+            fontFamily: "'DM Sans',sans-serif", fontWeight: 700, fontSize: '15px',
+            boxShadow: '0 4px 20px rgba(240,192,64,0.4)',
+            animation: 'pulse 2s infinite',
+          }}>
+            🎁 Gratter mon ticket cadeau
+          </button>
+        </div>
+      )}
+
+      {ticketGratte && !ticketRevele && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(42,26,74,0.85)',
+          zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1.25rem',
+        }}>
+          <div className="card" style={{ maxWidth: 380, width: '100%', padding: '2.5rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎂</div>
+            <h2 style={{ fontFamily: "'Playfair Display',serif", color: 'var(--vd)', marginBottom: '8px' }}>
+              Joyeux anniversaire !
+            </h2>
+            <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '2rem' }}>
+              Gratte le ticket pour découvrir ton cadeau ✨
+            </p>
+            <div
+              onClick={async () => {
+                setTicketRevele(true);
+                const anneeEnCours = new Date().getFullYear();
+                await setDoc(doc(db, 'cadeauxAnniversaire', user.uid), {
+                  userId: user.uid,
+                  annee: anneeEnCours,
+                  dateUtilisation: new Date().toISOString(),
+                  utilise: false,
+                });
+              }}
+              style={{
+                width: 200, height: 100, margin: '0 auto 1.5rem',
+                borderRadius: 'var(--r)', cursor: 'pointer',
+                background: 'linear-gradient(135deg, #F0C040, #E08020)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '2rem', boxShadow: '0 8px 24px rgba(240,192,64,0.4)',
+                border: '3px dashed rgba(255,255,255,0.5)',
+                userSelect: 'none',
+              }}
+            >
+              🤞 Gratte ici !
+            </div>
+            <button onClick={() => setTicketGratte(false)} style={{
+              background: 'none', border: 'none', color: 'var(--muted)',
+              fontSize: '13px', cursor: 'pointer',
+            }}>
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {ticketRevele && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(42,26,74,0.85)',
+          zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1.25rem',
+        }}>
+          <div className="card" style={{ maxWidth: 380, width: '100%', padding: '2.5rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎉</div>
+            <h2 style={{ fontFamily: "'Playfair Display',serif", color: 'var(--vd)', marginBottom: '8px' }}>
+              Félicitations !
+            </h2>
+            <div style={{
+              padding: '1.5rem', borderRadius: 'var(--r)',
+              background: 'linear-gradient(135deg, rgba(240,192,64,0.15), rgba(123,94,167,0.15))',
+              border: '2px solid #F0C040', marginBottom: '1.5rem',
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🔮</div>
+              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.2rem', color: 'var(--vd)', marginBottom: '4px' }}>
+                1 Tirage Express Offert !
+              </div>
+              <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
+                Valable pendant 24h 🎁
+              </div>
+            </div>
+            <Link href="/tirage-reserver?anniversaire=1" className="btn btn-primary" style={{ display: 'block', marginBottom: '10px' }}>
+              🔮 Utiliser mon cadeau maintenant
+            </Link>
+            <button onClick={() => setTicketRevele(false)} style={{
+              background: 'none', border: 'none', color: 'var(--muted)',
+              fontSize: '13px', cursor: 'pointer',
+            }}>
+              Plus tard
+            </button>
+          </div>
         </div>
       )}
 
