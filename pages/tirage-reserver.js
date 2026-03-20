@@ -8,7 +8,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 export default function TirageReserver() {
-  const { user, userData, loading } = useAuth();
+  const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
   const [prenom, setPrenom] = useState('');
   const [telephone, setTelephone] = useState('');
@@ -19,8 +19,8 @@ export default function TirageReserver() {
   const [cadeauAnniversaire, setCadeauAnniversaire] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) { router.push('/inscription'); return; }
-  }, [user, loading]);
+    if (!authLoading && !user) { router.push('/inscription'); return; }
+  }, [user, authLoading]);
 
   useEffect(() => {
     if (!userData) return;
