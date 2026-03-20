@@ -38,19 +38,17 @@ export default function TirageReserver() {
   }, [user]);
 
   useEffect(() => {
-  if (!user || !router.isReady) return;
-  if (router.query.anniversaire === '1') {
-    // Vérifier que le cadeau n'a pas déjà été utilisé
-    const verifier = async () => {
-      const snap = await getDoc(doc(db, 'cadeauxAnniversaire', user.uid));
-      if (snap.exists() && snap.data().utilise) return;
-      setCadeauAnniversaire(true);
-    };
-    verifier();
-  }
-}, [user, router.isReady]);
+    if (!user || !router.isReady) return;
+    if (router.query.anniversaire === '1') {
+      const verifier = async () => {
+        const snap = await getDoc(doc(db, 'cadeauxAnniversaire', user.uid));
+        if (snap.exists() && snap.data().utilise) return;
+        setCadeauAnniversaire(true);
+      };
+      verifier();
+    }
+  }, [user, router.isReady]);
 
-  // Cadeaux disponibles
   const getCadeauxDisponibles = () => {
     if (!fidelite) return [];
     const debloques = fidelite.cadeauxDebloques || [];
@@ -70,7 +68,6 @@ export default function TirageReserver() {
 
   const cadeauInfo = meilleurCadeau ? getCadeauLabel(meilleurCadeau) : null;
 
-  // Remise VIP automatique
   const getRemiseVIP = () => {
     if (!fidelite) return 0;
     if (fidelite.statut === 'silver') return 0.05;
@@ -80,26 +77,27 @@ export default function TirageReserver() {
   };
 
   const prixBase = 5;
+
   const calculerPrixFinal = () => {
-  if (cadeauAnniversaire) return 0;
-  let p = prixBase;
-  if (cadeauUtilise && cadeauInfo) {
-    if (cadeauInfo.type === 'fixe') p = Math.max(0, p - cadeauInfo.remise);
-    else p = p * (1 - cadeauInfo.remise);
-  } else {
-    const remiseVIP = getRemiseVIP();
-    if (remiseVIP > 0) p = p * (1 - remiseVIP);
-  }
-  return Math.max(0, p);
-};
+    if (cadeauAnniversaire) return 0;
+    let p = prixBase;
+    if (cadeauUtilise && cadeauInfo) {
+      if (cadeauInfo.type === 'fixe') p = Math.max(0, p - cadeauInfo.remise);
+      else p = p * (1 - cadeauInfo.remise);
+    } else {
+      const remiseVIP = getRemiseVIP();
+      if (remiseVIP > 0) p = p * (1 - remiseVIP);
+    }
+    return Math.max(0, p);
+  };
 
   const prix = calculerPrixFinal();
 
   const marquerCadeauUtilise = async () => {
     if (cadeauUtilise && meilleurCadeau) {
-      const { doc: firestoreDoc, updateDoc, arrayUnion } = await import('firebase/firestore');
+      const { doc: firestoreDoc, updateDoc: firestoreUpdate, arrayUnion } = await import('firebase/firestore');
       const { db: firestoreDb } = await import('../lib/firebase');
-      await updateDoc(firestoreDoc(firestoreDb, 'fidelite', user.uid), {
+      await firestoreUpdate(firestoreDoc(firestoreDb, 'fidelite', user.uid), {
         cadeauxUtilises: arrayUnion(meilleurCadeau),
         dernierCadeauUtilise: meilleurCadeau,
         dernierCadeauUtiliseAt: new Date(),
@@ -108,48 +106,33 @@ export default function TirageReserver() {
   };
 
   const handlePayer = async () => {
-  if (!prenom.trim()) return setError('Merci d\'indiquer ton prénom.');
-  setLoading(true);
-  setError('');
+    if (!prenom.trim()) return setError('Merci d\'indiquer ton prénom.');
+    setLoading(true);
+    setError('');
 
-  // Cadeau anniversaire gratuit
-  if (cadeauAnniversaire) {
-    await updateDoc(doc(db, 'cadeauxAnniversaire', user.uid), { utilise: true });
-    router.push({
-      pathname: '/tirage',
-      query: {
-        userId: user.uid,
-        prenom,
-        telephone,
-        gratuit: 'anniversaire',
-      },
-    });
-    return;
-  }
+    if (cadeauAnniversaire) {
+      await updateDoc(doc(db, 'cadeauxAnniversaire', user.uid), { utilise: true });
+      router.push({
+        pathname: '/tirage',
+        query: { userId: user.uid, prenom, telephone, gratuit: 'anniversaire' },
+      });
+      return;
+    }
 
-  await marquerCadeauUtilise();
-  try {
-    const res = await fetch('/api/create-checkout-tirage', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: user.uid,
-        prenom,
-        telephone,
-        prixFinal: Math.round(prix * 100),
-        cadeauUtilise: cadeauUtilise ? meilleurCadeau : null,
-        statutVIP: fidelite?.statut || 'bronze',
-      }),
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
-    await stripe.redirectToCheckout({ sessionId: data.sessionId });
-  } catch (err) {
-    setError('Erreur : ' + err.message);
-    setLoading(false);
-  }
-};
+    await marquerCadeauUtilise();
+    try {
+      const res = await fetch('/api/create-checkout-tirage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.uid,
+          prenom,
+          telephone,
+          prixFinal: Math.round(prix * 100),
+          cadeauUtilise: cadeauUtilise ? meilleurCadeau : null,
+          statutVIP: fidelite?.statut || 'bronze',
+        }),
+      });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
@@ -161,38 +144,33 @@ export default function TirageReserver() {
   };
 
   const handleWero = async () => {
-  if (cadeauAnniversaire) {
-    await updateDoc(doc(db, 'cadeauxAnniversaire', user.uid), { utilise: true });
+    if (cadeauAnniversaire) {
+      await updateDoc(doc(db, 'cadeauxAnniversaire', user.uid), { utilise: true });
+      router.push({
+        pathname: '/tirage',
+        query: { userId: user.uid, prenom, telephone, gratuit: 'anniversaire' },
+      });
+      return;
+    }
+    await marquerCadeauUtilise();
     router.push({
-      pathname: '/tirage',
+      pathname: '/attente-wero',
       query: {
-        userId: user.uid,
         prenom,
         telephone,
-        gratuit: 'anniversaire',
+        domaine: 'Tirage Lenormand',
+        sujet: 'Tirage express',
+        message: '',
+        minutes: '0',
+        montant: String(prix.toFixed(2)),
+        userId: user?.uid,
+        tarif: '0',
+        tirage: 'true',
+        cadeauUtilise: cadeauUtilise ? String(meilleurCadeau) : '',
+        statutVIP: fidelite?.statut || 'bronze',
       },
     });
-    return;
-  }
-  await marquerCadeauUtilise();
-  router.push({
-    pathname: '/attente-wero',
-    query: {
-      prenom,
-      telephone,
-      domaine: 'Tirage Lenormand',
-      sujet: 'Tirage express',
-      message: '',
-      minutes: '0',
-      montant: String(prix.toFixed(2)),
-      userId: user?.uid,
-      tarif: '0',
-      tirage: 'true',
-      cadeauUtilise: cadeauUtilise ? String(meilleurCadeau) : '',
-      statutVIP: fidelite?.statut || 'bronze',
-    },
-  });
-};
+  };
 
   return (
     <>
@@ -220,15 +198,17 @@ export default function TirageReserver() {
               background: 'rgba(123,94,167,0.08)', border: '1px solid var(--vl)',
               textAlign: 'center', marginBottom: '1.5rem',
             }}>
-              {(cadeauUtilise || getRemiseVIP() > 0) && (
+              {(cadeauAnniversaire || cadeauUtilise || getRemiseVIP() > 0) && (
                 <div style={{ fontSize: '13px', color: 'var(--muted)', textDecoration: 'line-through' }}>
                   5,00€
                 </div>
               )}
               <div style={{ fontFamily: "'Playfair Display',serif", fontSize: '2rem', color: 'var(--vd)' }}>
-                {prix.toFixed(2).replace('.', ',')}€
+                {cadeauAnniversaire ? '🎂 Gratuit !' : `${prix.toFixed(2).replace('.', ',')}€`}
               </div>
-              <div style={{ fontSize: '13px', color: 'var(--muted)' }}>paiement unique · réponse rapide</div>
+              <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
+                {cadeauAnniversaire ? 'Cadeau anniversaire 🎁' : 'paiement unique · réponse rapide'}
+              </div>
             </div>
 
             <div className="form-group">
@@ -256,8 +236,23 @@ export default function TirageReserver() {
               💬 Tu pourras échanger par chat
             </div>
 
-            {/* Cadeau fidélité */}
-            {cadeauInfo && (
+            {cadeauAnniversaire && (
+              <div style={{
+                marginBottom: '1rem', padding: '14px', borderRadius: 'var(--r)',
+                background: 'linear-gradient(135deg, rgba(240,192,64,0.15), rgba(123,94,167,0.15))',
+                border: '2px solid #F0C040', textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>🎂</div>
+                <div style={{ fontWeight: 600, color: 'var(--vd)', fontSize: '14px' }}>
+                  Cadeau anniversaire — Tirage Gratuit !
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
+                  Valable aujourd'hui uniquement 🎁
+                </div>
+              </div>
+            )}
+
+            {!cadeauAnniversaire && cadeauInfo && (
               <div onClick={() => setCadeauUtilise(c => !c)} style={{
                 marginBottom: '1rem', padding: '14px', borderRadius: 'var(--r)',
                 border: `1.5px solid ${cadeauUtilise ? 'var(--vl)' : 'var(--border)'}`,
@@ -278,8 +273,7 @@ export default function TirageReserver() {
               </div>
             )}
 
-            {/* Remise VIP automatique */}
-            {!cadeauUtilise && getRemiseVIP() > 0 && (
+            {!cadeauAnniversaire && !cadeauUtilise && getRemiseVIP() > 0 && (
               <div style={{
                 marginBottom: '1rem', padding: '10px 14px', borderRadius: 'var(--r)',
                 background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)',
@@ -289,22 +283,7 @@ export default function TirageReserver() {
               </div>
             )}
 
-           {cadeauAnniversaire && (
-  <div style={{
-    marginBottom: '1rem', padding: '14px', borderRadius: 'var(--r)',
-    background: 'linear-gradient(135deg, rgba(240,192,64,0.15), rgba(123,94,167,0.15))',
-    border: '2px solid #F0C040', textAlign: 'center',
-  }}>
-    <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>🎂</div>
-    <div style={{ fontWeight: 600, color: 'var(--vd)', fontSize: '14px' }}>
-      Cadeau anniversaire — Tirage Gratuit !
-    </div>
-    <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
-      Valable aujourd'hui uniquement 🎁
-    </div>
-  </div>
-)}
-{error && <p className="form-error" style={{ marginBottom: '1rem' }}>{error}</p>}
+            {error && <p className="form-error" style={{ marginBottom: '1rem' }}>{error}</p>}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button
@@ -313,23 +292,25 @@ export default function TirageReserver() {
                 className="btn btn-primary"
                 style={{ width: '100%', padding: '14px', fontSize: '15px' }}
               >
-                {loading ? 'Redirection…' : `💳 Payer ${prix.toFixed(2).replace('.', ',')}€ par carte →`}
+                {loading ? 'Redirection…' : cadeauAnniversaire ? '🎂 Utiliser mon cadeau gratuit →' : `💳 Payer ${prix.toFixed(2).replace('.', ',')}€ par carte →`}
               </button>
-              <div onClick={handleWero} style={{
-                padding: '14px', borderRadius: 'var(--r)',
-                border: '1.5px solid var(--border)',
-                background: 'rgba(255,255,255,0.7)',
-                cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <span style={{ fontSize: '1.2rem' }}>📱</span>
-                <div>
-                  <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--vd)' }}>
-                    Payer {prix.toFixed(2).replace('.', ',')}€ via Wero
+              {!cadeauAnniversaire && (
+                <div onClick={handleWero} style={{
+                  padding: '14px', borderRadius: 'var(--r)',
+                  border: '1.5px solid var(--border)',
+                  background: 'rgba(255,255,255,0.7)',
+                  cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <span style={{ fontSize: '1.2rem' }}>📱</span>
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--vd)' }}>
+                      Payer {prix.toFixed(2).replace('.', ',')}€ via Wero
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--muted)' }}>06 86 09 44 38 · Sans frais</div>
                   </div>
-                  <div style={{ fontSize: '11px', color: 'var(--muted)' }}>06 86 09 44 38 · Sans frais</div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
