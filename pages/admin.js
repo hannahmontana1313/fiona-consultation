@@ -61,14 +61,6 @@ const [tiragesEnAttente, setTiragesEnAttente] = useState(0);
   }, []);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'tirages'), snap => {
-      const enAttente = snap.docs.filter(d => d.data().statut === 'en_attente').length;
-      setTiragesEnAttente(enAttente);
-    });
-    return unsub;
-  }, []);
-
-  useEffect(() => {
     const unsub = onSnapshot(collection(db, 'avis'), snap => {
       setAvis(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
