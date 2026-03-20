@@ -678,7 +678,7 @@ function TiragesAdmin() {
     });
     await new Promise(resolve => setTimeout(resolve, 2000));
     await addDoc(collection(db, 'tirages', selectedTirage, 'messages'), {
-      texte: '✨ Si tu souhaites plus de détails ou approfondir un sujet, n\'hésite pas à prendre une consultation privée avec moi !',
+      texte: '✨ Si tu souhaites plus de details ou approfondir un sujet, nhésite pas à prendre une consultation privée avec moi !',
       auteur: 'admin', createdAt: serverTimestamp(),
     });
   };
