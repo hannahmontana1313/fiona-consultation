@@ -78,10 +78,18 @@ export default function Admin() {
   useEffect(() => {
     consultations.forEach(c => {
       if (c.statut === 'active' && c.secondesRestantes > 0) {
+        // Ne crée le timer QUE s'il n'existe pas déjà
         if (!timerIntervals.current[c.id]) {
+          // Initialise le timer avec la valeur actuelle seulement au démarrage
+          setTimers(prev => {
+            if (!(c.id in prev)) return { ...prev, [c.id]: c.secondesRestantes };
+            return prev; // Ne pas écraser si déjà en cours
+          });
+
           timerIntervals.current[c.id] = setInterval(() => {
             setTimers(prev => {
-              const current = prev[c.id] ?? c.secondesRestantes;
+              const current = prev[c.id];
+              if (current === undefined) return prev;
               const next = current - 1;
               if (next <= 0) {
                 clearInterval(timerIntervals.current[c.id]);
@@ -96,6 +104,7 @@ export default function Admin() {
             });
           }, 1000);
         }
+        // Ne pas toucher au timer s'il tourne déjà !
       } else {
         if (timerIntervals.current[c.id]) {
           clearInterval(timerIntervals.current[c.id]);
@@ -106,7 +115,7 @@ export default function Admin() {
         }
       }
     });
-  }, [consultations]);
+  }, [consultations.map(c => c.id + c.statut).join(',')]);
 
   useEffect(() => {
     const q = query(collection(db, 'consultations'), orderBy('createdAt', 'desc'));
