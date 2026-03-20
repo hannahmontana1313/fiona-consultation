@@ -96,7 +96,7 @@ export default function Tirage() {
       const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
       setMessages(msgs);
-      const msgFin = msgs.find(m => m.texte?.includes('consultation privée'));
+      const msgFin = msgs.find(m => m.texte?.includes('consultation priv'));
       if (msgFin) {
         setBloque(true);
         setTimeout(() => setAvisOpen(true), 1500);
