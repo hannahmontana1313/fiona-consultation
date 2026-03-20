@@ -9,7 +9,7 @@ import { useAuth } from '../components/AuthContext';
 import Stars from '../components/Stars';
 
 export default function Admin() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, deconnexion } = useAuth();
   const router = useRouter();
 
   const [consultations, setConsultations] = useState([]);
@@ -335,8 +335,19 @@ export default function Admin() {
               {statut === 'En ligne' ? 'Passer hors ligne' : 'Passer en ligne'}
             </button>
             <button onClick={() => { setSonActif(s => !s); notifSound.current?.play().catch(() => {}); }} className="btn btn-outline" style={{ fontSize: '13px', padding: '7px 16px' }}>
-              {sonActif ? 'Son active' : 'Activer le son'}
-            </button>
+  {sonActif ? 'Son active' : 'Activer le son'}
+</button>
+<button onClick={async () => {
+  await fetch('/api/set-statut', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ statut: 'Hors ligne' }),
+  });
+  await deconnexion();
+  router.push('/');
+}} className="btn btn-outline" style={{ fontSize: '13px', padding: '7px 16px', color: '#A02040', borderColor: '#E0B0C0' }}>
+  🔴 Se déconnecter
+</button>
           </div>
         </div>
 
