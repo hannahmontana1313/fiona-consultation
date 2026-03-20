@@ -21,6 +21,7 @@ export default function Admin() {
   const [sonActif, setSonActif] = useState(false);
   const [timers, setTimers] = useState({});
   const [onglet, setOnglet] = useState('conversations');
+  const [avis, setAvis] = useState([]);
   const notifSound = useRef(null);
   const msgsRef = useRef(null);
   const prevMsgCount = useRef(0);
@@ -54,6 +55,13 @@ export default function Admin() {
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'statut'), snap => {
       if (snap.exists()) setStatut(snap.data().statut || 'En ligne');
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'avis'), snap => {
+      setAvis(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return unsub;
   }, []);
@@ -277,6 +285,7 @@ export default function Admin() {
   const totalPaye = consultations
     .filter(c => c.statut !== 'pending' && c.statut !== 'en_attente')
     .reduce((acc, c) => acc + (c.paiement === 'wero' ? parseFloat(c.montant || 0) : (c.montantPaye || 0) / 100), 0);
+  const avisEnAttente = avis.filter(a => !a.visible).length;
 
   const filteredConsultations = consultations.filter(c => {
     if (!search) return true;
@@ -341,8 +350,17 @@ export default function Admin() {
 
         <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
           {['conversations', 'contacts', 'avis', 'tirages'].map(o => (
-            <button key={o} onClick={() => setOnglet(o)} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === o ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === o ? '#fff' : 'var(--muted)', border: onglet === o ? 'none' : '1px solid var(--border)' }}>
-              {o === 'conversations' ? 'Conversations' : o === 'contacts' ? 'Mes clients' : o === 'avis' ? 'Avis clients' : '🔮 Tirages'}
+            <button key={o} onClick={() => setOnglet(o)} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === o ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === o ? '#fff' : 'var(--muted)', border: onglet === o ? 'none' : '1px solid var(--border)', position: 'relative' }}>
+              {o === 'conversations' ? 'Conversations' : o === 'contacts' ? 'Mes clients' : o === 'avis' ? (
+                <span>
+                  Avis clients
+                  {avisEnAttente > 0 && (
+                    <span style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: '#C0305A', color: '#fff', fontSize: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {avisEnAttente}
+                    </span>
+                  )}
+                </span>
+              ) : '🔮 Tirages'}
             </button>
           ))}
         </div>
@@ -351,8 +369,13 @@ export default function Admin() {
 
         {onglet === 'avis' && (
           <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', overflow: 'hidden' }}>
-            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.2rem', color: 'var(--vd)' }}>Avis clients</h2>
+              {avisEnAttente > 0 && (
+                <div style={{ padding: '4px 12px', borderRadius: '50px', background: 'rgba(200,60,80,0.1)', color: '#A02040', fontSize: '12px', fontWeight: 500 }}>
+                  {avisEnAttente} en attente de publication
+                </div>
+              )}
             </div>
             <AvisAdmin />
           </div>
