@@ -492,20 +492,47 @@ function NotifPermission({ consultationId, userId }) {
   const demanderPermission = async () => {
     try {
       setStatut('loading');
+
+      // Vérifier si les notifications sont supportées
+      if (!('Notification' in window)) {
+        setErreurMsg('Ton navigateur ne supporte pas les notifications.');
+        setStatut('erreur');
+        return;
+      }
+
+      // Vérifier si le service worker est supporté
+      if (!('serviceWorker' in navigator)) {
+        setErreurMsg('Service Worker non supporté sur ce navigateur.');
+        setStatut('erreur');
+        return;
+      }
+
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') { setStatut('refuse'); return; }
 
+      // Enregistrer le service worker manuellement
+      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      await navigator.serviceWorker.ready;
+
+      const { getMessaging, getToken } = await import('firebase/messaging');
+      const { getApp } = await import('firebase/app');
       const messaging = getMessaging(getApp());
+
       const token = await getToken(messaging, {
-        vapidKey: 'BETinRhkHulkoTZQ92PFD-7CivmLNoPwlf3q9ryzAMd5YpUvSESSKrvx1qg8scpPL9bCer9XhmJlavOzPBuTmyE'
+        vapidKey: 'BETinRhkHulkoTZQ92PFD-7CivmLNoPwlf3q9ryzAMd5YpUvSESSKrvx1qg8scpPL9bCer9XhmJlavOzPBuTmyE',
+        serviceWorkerRegistration: registration,
       });
 
       if (token && consultationId && userId) {
         await updateDoc(doc(db, 'consultations', consultationId), { fcmToken: token });
+        setStatut('ok');
+      } else {
+        setErreurMsg('Impossible de récupérer le token. Réessaie.');
+        setStatut('erreur');
       }
-      setStatut('ok');
     } catch (err) {
       console.error('Notif error:', err);
+      setErreurMsg('Erreur : ' + err.message);
       setStatut('erreur');
     }
   };
