@@ -22,6 +22,7 @@ export default function Admin() {
   const [timers, setTimers] = useState({});
   const [onglet, setOnglet] = useState('conversations');
   const [avis, setAvis] = useState([]);
+const [tiragesEnAttente, setTiragesEnAttente] = useState(0);
   const notifSound = useRef(null);
   const msgsRef = useRef(null);
   const prevMsgCount = useRef(0);
@@ -53,8 +54,16 @@ export default function Admin() {
   }, [user, isAdmin, loading]);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'statut'), snap => {
-      if (snap.exists()) setStatut(snap.data().statut || 'En ligne');
+    const unsub = onSnapshot(collection(db, 'avis'), snap => {
+      setAvis(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'tirages'), snap => {
+      const enAttente = snap.docs.filter(d => d.data().statut === 'en_attente').length;
+      setTiragesEnAttente(enAttente);
     });
     return unsub;
   }, []);
@@ -378,7 +387,16 @@ export default function Admin() {
                     </span>
                   )}
                 </span>
-              ) : '🔮 Tirages'}
+              ) : (
+  <span>
+    🔮 Tirages
+    {tiragesEnAttente > 0 && (
+      <span style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: '#C0305A', color: '#fff', fontSize: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {tiragesEnAttente}
+      </span>
+    )}
+  </span>
+)}
             </button>
           ))}
         </div>
