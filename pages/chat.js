@@ -488,6 +488,7 @@ export default function Chat() {
 }
 function NotifPermission({ consultationId, userId }) {
   const [statut, setStatut] = useState('idle');
+  const [erreurMsg, setErreurMsg] = useState('');
 
   const demanderPermission = async () => {
     try {
@@ -549,7 +550,12 @@ function NotifPermission({ consultationId, userId }) {
     </div>
   );
 
-  return (
+  if (statut === 'erreur') return (
+    <div style={{ marginTop: '1rem', padding: '10px 16px', borderRadius: 'var(--r)', background: 'rgba(200,60,80,0.08)', color: '#A02040', fontSize: '13px', textAlign: 'center' }}>
+      ❌ {erreurMsg || 'Notifications non disponibles sur ce navigateur.'}
+    </div>
+  );
+return (
     <div style={{ marginTop: '1rem' }}>
       <button onClick={demanderPermission} disabled={statut === 'loading'} style={{ width: '100%', padding: '12px', borderRadius: '50px', background: 'linear-gradient(135deg, var(--v), var(--pd))', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: '14px' }}>
         {statut === 'loading' ? 'Activation…' : '🔔 M\'avertir quand c\'est mon tour'}
