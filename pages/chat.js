@@ -527,7 +527,7 @@ function NotifPermission({ consultationId, userId }) {
       const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
 
-      const vapidKey = 'BETinRhkHulkoTZQ92PFD-7CivmLNoPwlf3q9ryzAMd5YpUvSESSKrvx1qg8scpPL9bCer9XhmJlavOzPBuTmyE';
+      const vapidKey = BBHcLnPlznzowt_SCUJ0LnTk0gWTHT-BsNA0YNaVhcV6_QOzs8sKc4__px7v1QSXKFudap6kibvS9iFGs2pd-v4;
 
 const convertVapidKey = (base64String) => {
   const base64 = base64String
