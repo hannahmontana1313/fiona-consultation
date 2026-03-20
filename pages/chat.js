@@ -9,6 +9,8 @@ import { db } from '../lib/firebase';
 import { useAuth } from '../components/AuthContext';
 import Stars from '../components/Stars';
 import { getTarifActuel } from '../lib/stripe';
+import { getMessaging, getToken } from 'firebase/messaging';
+import { getApp } from 'firebase/app';
 
 function Morpion() {
   const [board, setBoard] = useState(Array(9).fill(null));
@@ -374,9 +376,12 @@ export default function Chat() {
               Le chronomètre ne démarrera qu'une fois que j'aurai accepté ta demande.
             </p>
             <div style={{ padding: '1rem', borderRadius: 'var(--r)', background: 'rgba(123,94,167,0.08)', border: '1px solid var(--vl)', fontSize: '14px', color: 'var(--vd)' }}>
-              ⏳ En attente de confirmation…
-            </div>
-            <Morpion />
+  ⏳ En attente de confirmation…
+</div>
+
+<NotifPermission consultationId={consultationId} userId={user?.uid} />
+
+<Morpion />
           </div>
         </div>
       </>
@@ -479,5 +484,52 @@ export default function Chat() {
         </div>
       )}
     </>
+  );
+}
+function NotifPermission({ consultationId, userId }) {
+  const [statut, setStatut] = useState('idle');
+
+  const demanderPermission = async () => {
+    try {
+      setStatut('loading');
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') { setStatut('refuse'); return; }
+
+      const messaging = getMessaging(getApp());
+      const token = await getToken(messaging, {
+        vapidKey: 'BETinRhkHulkoTZQ92PFD-7CivmLNoPwlf3q9ryzAMd5YpUvSESSKrvx1qg8scpPL9bCer9XhmJlavOzPBuTmyE'
+      });
+
+      if (token && consultationId && userId) {
+        await updateDoc(doc(db, 'consultations', consultationId), { fcmToken: token });
+      }
+      setStatut('ok');
+    } catch (err) {
+      console.error('Notif error:', err);
+      setStatut('erreur');
+    }
+  };
+
+  if (statut === 'ok') return (
+    <div style={{ marginTop: '1rem', padding: '10px 16px', borderRadius: 'var(--r)', background: 'rgba(60,160,100,0.1)', color: '#1A7040', fontSize: '13px', textAlign: 'center' }}>
+      ✅ Tu recevras une notification quand ce sera ton tour !
+    </div>
+  );
+
+  if (statut === 'refuse') return (
+    <div style={{ marginTop: '1rem', padding: '10px 16px', borderRadius: 'var(--r)', background: 'rgba(200,60,80,0.08)', color: '#A02040', fontSize: '13px', textAlign: 'center' }}>
+      ❌ Notifications refusées. Reste sur la page pour ne pas rater ton tour.
+    </div>
+  );
+
+  return (
+    <div style={{ marginTop: '1rem' }}>
+      <button onClick={demanderPermission} disabled={statut === 'loading'} style={{ width: '100%', padding: '12px', borderRadius: '50px', background: 'linear-gradient(135deg, var(--v), var(--pd))', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: '14px' }}>
+        {statut === 'loading' ? 'Activation…' : '🔔 M\'avertir quand c\'est mon tour'}
+      </button>
+      <p style={{ fontSize: '12px', color: 'var(--muted)', textAlign: 'center', marginTop: '8px' }}>
+        Tu recevras une notification sur ton téléphone même si tu fermes cet onglet.
+      </p>
+    </div>
   );
 }
