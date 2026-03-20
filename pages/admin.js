@@ -51,6 +51,14 @@ export default function Admin() {
     if (!loading && (!user || !isAdmin)) router.push('/');
   }, [user, isAdmin, loading]);
 
+  // Charger le statut depuis Firebase au démarrage
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'config', 'statut'), snap => {
+      if (snap.exists()) setStatut(snap.data().statut || 'En ligne');
+    });
+    return unsub;
+  }, []);
+
   useEffect(() => {
     consultations.forEach(c => {
       if (c.statut === 'active' && c.secondesRestantes > 0) {
@@ -130,6 +138,11 @@ export default function Admin() {
     updateDoc(doc(db, 'consultations', selected), { messagesNonLus: 0 }).catch(() => {});
   }, [selected]);
 
+  const changerStatut = async (nouveau) => {
+    setStatut(nouveau);
+    await setDoc(doc(db, 'config', 'statut'), { statut: nouveau, updatedAt: new Date() });
+  };
+
   const accepterConsultation = async (id) => {
     await updateDoc(doc(db, 'consultations', id), {
       statut: 'active',
@@ -139,6 +152,9 @@ export default function Admin() {
       texte: "Coucou et bienvenue ✨ Prends quelques instants pour m'expliquer ta situation calmement. Ensuite, pose-moi tes questions une par une pour que je puisse te répondre de la façon la plus claire possible. Le temps de consultation est en cours et le compteur s'affiche en haut du chat.",
       auteur: 'admin', type: 'message', lu: true, createdAt: serverTimestamp(),
     });
+
+    // Mettre le statut en consultation
+    await setDoc(doc(db, 'config', 'statut'), { statut: 'En consultation', updatedAt: new Date() });
 
     // Points fidélité Wero
     const consultation = consultations.find(c => c.id === id);
@@ -225,6 +241,8 @@ export default function Admin() {
     await addDoc(collection(db, 'consultations', id, 'messages'), {
       texte: 'La consultation a ete cloturee.', auteur: 'system', type: 'alerte', createdAt: serverTimestamp(),
     });
+    // Remettre en ligne après consultation
+    await setDoc(doc(db, 'config', 'statut'), { statut: 'En ligne', updatedAt: new Date() });
   };
 
   const quickMsg = (txt) => setReponse(txt);
@@ -285,11 +303,11 @@ export default function Admin() {
             ✦ Dashboard Fiona
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 12px', borderRadius: '50px', fontSize: '12px', fontWeight: 500, background: statut === 'En ligne' ? 'rgba(60,160,100,0.12)' : 'rgba(200,60,80,0.1)', color: statut === 'En ligne' ? '#1A7040' : '#A02040' }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: statut === 'En ligne' ? '#3CA060' : '#C0305A', display: 'inline-block' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 12px', borderRadius: '50px', fontSize: '12px', fontWeight: 500, background: statut === 'En ligne' ? 'rgba(60,160,100,0.12)' : statut === 'En consultation' ? 'rgba(240,192,64,0.15)' : 'rgba(200,60,80,0.1)', color: statut === 'En ligne' ? '#1A7040' : statut === 'En consultation' ? '#7A4A00' : '#A02040' }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: statut === 'En ligne' ? '#3CA060' : statut === 'En consultation' ? '#F0C040' : '#C0305A', display: 'inline-block' }} />
               {statut}
             </div>
-            <button onClick={() => setStatut(s => s === 'En ligne' ? 'Hors ligne' : 'En ligne')} className="btn btn-outline" style={{ fontSize: '13px', padding: '7px 16px' }}>
+            <button onClick={() => changerStatut(statut === 'En ligne' ? 'Hors ligne' : 'En ligne')} className="btn btn-outline" style={{ fontSize: '13px', padding: '7px 16px' }}>
               {statut === 'En ligne' ? 'Passer hors ligne' : 'Passer en ligne'}
             </button>
             <button onClick={() => { setSonActif(s => !s); notifSound.current?.play().catch(() => {}); }} className="btn btn-outline" style={{ fontSize: '13px', padding: '7px 16px' }}>
@@ -314,18 +332,11 @@ export default function Admin() {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
-          <button onClick={() => setOnglet('conversations')} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === 'conversations' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === 'conversations' ? '#fff' : 'var(--muted)', border: onglet === 'conversations' ? 'none' : '1px solid var(--border)' }}>
-            Conversations
-          </button>
-          <button onClick={() => setOnglet('contacts')} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === 'contacts' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === 'contacts' ? '#fff' : 'var(--muted)', border: onglet === 'contacts' ? 'none' : '1px solid var(--border)' }}>
-            Mes clients
-          </button>
-          <button onClick={() => setOnglet('avis')} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === 'avis' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === 'avis' ? '#fff' : 'var(--muted)', border: onglet === 'avis' ? 'none' : '1px solid var(--border)' }}>
-            Avis clients
-          </button>
-          <button onClick={() => setOnglet('tirages')} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === 'tirages' ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === 'tirages' ? '#fff' : 'var(--muted)', border: onglet === 'tirages' ? 'none' : '1px solid var(--border)' }}>
-            🔮 Tirages
-          </button>
+          {['conversations', 'contacts', 'avis', 'tirages'].map(o => (
+            <button key={o} onClick={() => setOnglet(o)} style={{ padding: '8px 20px', borderRadius: '50px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', fontWeight: 500, background: onglet === o ? 'linear-gradient(135deg, var(--v), var(--pd))' : 'rgba(255,255,255,0.8)', color: onglet === o ? '#fff' : 'var(--muted)', border: onglet === o ? 'none' : '1px solid var(--border)' }}>
+              {o === 'conversations' ? 'Conversations' : o === 'contacts' ? 'Mes clients' : o === 'avis' ? 'Avis clients' : '🔮 Tirages'}
+            </button>
+          ))}
         </div>
 
         {onglet === 'tirages' && <TiragesAdmin />}
@@ -377,18 +388,18 @@ export default function Admin() {
                   <div key={c.id} style={{ padding: '1rem 1.5rem', borderRadius: 'var(--r)', background: 'rgba(255,220,100,0.15)', border: '2px solid #F0C040', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <div>
                       <div style={{ fontWeight: 600, color: 'var(--vd)' }}>
-  {c.prioritaire && <span style={{ color: '#F0C040', marginRight: '4px' }}>⭐ PRIORITAIRE</span>}
-  {c.cadeauUtilise && <span style={{ marginRight: '4px' }}>🎁</span>}
-  {c.statutVIP === 'silver' && <span style={{ marginRight: '4px' }}>🥈</span>}
-  {c.statutVIP === 'gold' && <span style={{ marginRight: '4px' }}>🥇</span>}
-  {c.statutVIP === 'vip' && <span style={{ marginRight: '4px' }}>👑</span>}
-  Nouvelle demande - {c.prenom}
-</div>
-<div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '3px' }}>
-  {c.domaine} - {c.sujet} - {c.minutes} min - {c.paiement === 'wero' ? parseFloat(c.montant || 0).toFixed(2) + 'e via Wero' : ((c.montantPaye || 0) / 100).toFixed(2) + 'e via Stripe'} paye
-  {c.cadeauUtilise && <span style={{ marginLeft: '6px', color: 'var(--v)', fontWeight: 500 }}>· 🎁 Cadeau utilisé</span>}
-  {c.statutVIP && c.statutVIP !== 'bronze' && <span style={{ marginLeft: '6px', color: 'var(--v)', fontWeight: 500 }}>· {c.statutVIP.toUpperCase()}</span>}
-</div>
+                        {c.prioritaire && <span style={{ color: '#F0C040', marginRight: '4px' }}>⭐ PRIORITAIRE</span>}
+                        {c.cadeauUtilise && <span style={{ marginRight: '4px' }}>🎁</span>}
+                        {c.statutVIP === 'silver' && <span style={{ marginRight: '4px' }}>🥈</span>}
+                        {c.statutVIP === 'gold' && <span style={{ marginRight: '4px' }}>🥇</span>}
+                        {c.statutVIP === 'vip' && <span style={{ marginRight: '4px' }}>👑</span>}
+                        Nouvelle demande - {c.prenom}
+                      </div>
+                      <div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '3px' }}>
+                        {c.domaine} - {c.sujet} - {c.minutes} min - {c.paiement === 'wero' ? parseFloat(c.montant || 0).toFixed(2) + 'e via Wero' : ((c.montantPaye || 0) / 100).toFixed(2) + 'e via Stripe'} paye
+                        {c.cadeauUtilise && <span style={{ marginLeft: '6px', color: 'var(--v)', fontWeight: 500 }}>· 🎁 Cadeau utilisé</span>}
+                        {c.statutVIP && c.statutVIP !== 'bronze' && <span style={{ marginLeft: '6px', color: 'var(--v)', fontWeight: 500 }}>· {c.statutVIP.toUpperCase()}</span>}
+                      </div>
                       {c.paiement === 'wero' && c.telephone && (
                         <div style={{ fontSize: '13px', color: 'var(--vd)', marginTop: '4px', fontWeight: 500 }}>Tel: {c.telephone}</div>
                       )}
@@ -412,13 +423,13 @@ export default function Admin() {
                     <div key={c.id} onClick={() => setSelected(c.id)} style={{ padding: '0.85rem', borderRadius: 'var(--r)', cursor: 'pointer', marginBottom: '4px', position: 'relative', transition: 'all 0.15s', background: selected === c.id ? 'rgba(123,94,167,0.1)' : 'transparent', border: selected === c.id ? '1px solid var(--vl)' : '1px solid transparent' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                         <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--vd)' }}>
-  {c.prioritaire && <span style={{ color: '#F0C040', marginRight: '4px' }}>⭐</span>}
-  {c.cadeauUtilise && <span style={{ marginRight: '4px' }}>🎁</span>}
-  {c.statutVIP === 'silver' && <span style={{ marginRight: '4px' }}>🥈</span>}
-  {c.statutVIP === 'gold' && <span style={{ marginRight: '4px' }}>🥇</span>}
-  {c.statutVIP === 'vip' && <span style={{ marginRight: '4px' }}>👑</span>}
-  {c.prenom}
-</div>
+                          {c.prioritaire && <span style={{ color: '#F0C040', marginRight: '4px' }}>⭐</span>}
+                          {c.cadeauUtilise && <span style={{ marginRight: '4px' }}>🎁</span>}
+                          {c.statutVIP === 'silver' && <span style={{ marginRight: '4px' }}>🥈</span>}
+                          {c.statutVIP === 'gold' && <span style={{ marginRight: '4px' }}>🥇</span>}
+                          {c.statutVIP === 'vip' && <span style={{ marginRight: '4px' }}>👑</span>}
+                          {c.prenom}
+                        </div>
                         <div style={{ fontSize: '12px', fontWeight: 600, color: timerColor(c.id) }}>
                           {c.statut === 'active' ? formatTimer(c.id) : c.statut === 'en_attente' ? 'Attente' : 'OK'}
                         </div>
@@ -444,11 +455,16 @@ export default function Admin() {
                         {(selectedData.prenom || 'C')[0].toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 500, fontSize: '15px', color: 'var(--vd)' }}>{selectedData.prenom}</div>
+                        <div style={{ fontWeight: 500, fontSize: '15px', color: 'var(--vd)' }}>
+                          {selectedData.cadeauUtilise && <span style={{ marginRight: '4px' }}>🎁</span>}
+                          {selectedData.statutVIP === 'silver' && <span style={{ marginRight: '4px' }}>🥈</span>}
+                          {selectedData.statutVIP === 'gold' && <span style={{ marginRight: '4px' }}>🥇</span>}
+                          {selectedData.statutVIP === 'vip' && <span style={{ marginRight: '4px' }}>👑</span>}
+                          {selectedData.prenom}
+                        </div>
                         <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
                           {selectedData.domaine} - {selectedData.sujet}
                           {selectedData.telephone ? ' - Tel: ' + selectedData.telephone : ''}
-                          {selectedData.email ? ' - ' + selectedData.email : ''}
                         </div>
                       </div>
                     </div>
@@ -545,11 +561,7 @@ function AvisAdmin() {
             <p style={{ fontSize: '14px', color: 'var(--txt)', marginBottom: '4px', fontStyle: 'italic' }}>"{a.texte}"</p>
             <div style={{ fontSize: '12px', color: 'var(--muted)' }}>— {a.prenom}</div>
           </div>
-          <button onClick={() => toggleVisible(a.id, a.visible)} style={{
-            padding: '6px 14px', borderRadius: '50px', border: 'none', cursor: 'pointer',
-            background: a.visible ? 'rgba(60,160,100,0.15)' : 'rgba(200,60,80,0.1)',
-            color: a.visible ? '#1A7040' : '#A02040', fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap',
-          }}>
+          <button onClick={() => toggleVisible(a.id, a.visible)} style={{ padding: '6px 14px', borderRadius: '50px', border: 'none', cursor: 'pointer', background: a.visible ? 'rgba(60,160,100,0.15)' : 'rgba(200,60,80,0.1)', color: a.visible ? '#1A7040' : '#A02040', fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }}>
             {a.visible ? '✅ Visible' : '👁 Publier'}
           </button>
         </div>
@@ -596,8 +608,7 @@ function TiragesAdmin() {
     await new Promise(resolve => setTimeout(resolve, 2000));
     await addDoc(collection(db, 'tirages', selectedTirage, 'messages'), {
       texte: '✨ Si tu souhaites plus de détails ou approfondir un sujet, n\'hésite pas à prendre une consultation privée avec moi !',
-      auteur: 'admin',
-      createdAt: serverTimestamp(),
+      auteur: 'admin', createdAt: serverTimestamp(),
     });
   };
 
