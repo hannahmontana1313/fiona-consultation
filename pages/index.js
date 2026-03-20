@@ -4,13 +4,15 @@ import Stars from '../components/Stars';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../components/AuthContext';
 import { getTarifActuel } from '../lib/stripe';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 export default function Home() {
   const { user } = useAuth();
   const tarif = getTarifActuel();
   const isWeekend = tarif === 5;
+  const [avis, setAvis] = useState([]);
+  const [fidelite, setFidelite] = useState(null);
 
   const MESSAGES_DU_JOUR = [
     "✨ Les astres s'alignent aujourd'hui pour révéler ce que ton cœur pressent déjà...",
@@ -48,7 +50,23 @@ export default function Home() {
 
   const messageDuJour = MESSAGES_DU_JOUR[new Date().getDate() % MESSAGES_DU_JOUR.length];
 
-  const [avis, setAvis] = useState([]);
+  // Charger les points fidélité si connectée
+  useEffect(() => {
+    if (!user) return;
+    const fetchFidelite = async () => {
+      const snap = await getDoc(doc(db, 'fidelite', user.uid));
+      if (snap.exists()) setFidelite(snap.data());
+    };
+    fetchFidelite();
+  }, [user]);
+
+  // Calcul du prochain palier
+  const getProchainPalier = (points) => {
+    if (points < 150) return { palier: 150, reste: 150 - points, cadeau: '5€ offerts' };
+    if (points < 300) return { palier: 300, reste: 300 - points, cadeau: '-10% + priorité' };
+    if (points < 600) return { palier: 600, reste: 600 - points, cadeau: 'accès VIP' };
+    return null;
+  };
 
   useEffect(() => {
     const q = query(
@@ -62,11 +80,14 @@ export default function Home() {
     return unsub;
   }, []);
 
+  const prochainPalier = fidelite ? getProchainPalier(fidelite.points) : null;
+
   return (
     <>
       <Stars />
       <Navbar />
 
+      {/* Message du jour */}
       <div style={{
         background: 'linear-gradient(135deg, rgba(42,26,74,0.9), rgba(123,94,167,0.85))',
         color: '#fff', textAlign: 'center', padding: '12px 20px',
@@ -74,6 +95,36 @@ export default function Home() {
       }}>
         {messageDuJour}
       </div>
+
+      {/* Bandeau fidélité — visible uniquement si connectée */}
+      {user && fidelite && prochainPalier && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(232,160,200,0.15), rgba(123,94,167,0.15))',
+          borderBottom: '1px solid rgba(123,94,167,0.2)',
+          textAlign: 'center', padding: '10px 20px',
+          fontSize: '13px', color: 'var(--vd)',
+        }}>
+          🔥 Tu es à <strong>{prochainPalier.reste} points</strong> de ton prochain cadeau : <strong>{prochainPalier.cadeau}</strong> !
+          <Link href="/fidelite" style={{ marginLeft: '8px', color: 'var(--v)', fontWeight: 600, textDecoration: 'underline' }}>
+            Voir mes points
+          </Link>
+        </div>
+      )}
+
+      {/* Bandeau si tous les paliers atteints */}
+      {user && fidelite && !prochainPalier && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(255,215,0,0.15), rgba(123,94,167,0.15))',
+          borderBottom: '1px solid rgba(255,215,0,0.3)',
+          textAlign: 'center', padding: '10px 20px',
+          fontSize: '13px', color: 'var(--vd)',
+        }}>
+          👑 Tu as atteint le statut <strong>VIP</strong> ! Merci pour ta fidélité 🤍
+          <Link href="/fidelite" style={{ marginLeft: '8px', color: 'var(--v)', fontWeight: 600, textDecoration: 'underline' }}>
+            Voir mes avantages
+          </Link>
+        </div>
+      )}
 
       <main style={{ paddingBottom: '4rem' }}>
         <section style={{
@@ -188,7 +239,7 @@ export default function Home() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
               {[
                 { icon: '✍️', title: '100% écrit', desc: 'Échanges uniquement par message, à ton rythme' },
-                { icon: '⏱️', title: 'Chronomètre en direct', desc: 'Le temps restant s\'affiche en temps réel' },
+                { icon: '⏱️', title: 'Chronomètre en direct', desc: "Le temps restant s'affiche en temps réel" },
                 { icon: '➕', title: 'Ajouter du temps', desc: 'Prolonge ta consultation à tout moment' },
                 { icon: '📖', title: 'Historique complet', desc: 'Retrouve toutes tes consultations passées' },
               ].map(f => (
