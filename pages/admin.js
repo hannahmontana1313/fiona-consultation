@@ -51,7 +51,6 @@ export default function Admin() {
     if (!loading && (!user || !isAdmin)) router.push('/');
   }, [user, isAdmin, loading]);
 
-  // Charger le statut depuis Firebase au démarrage
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'statut'), snap => {
       if (snap.exists()) setStatut(snap.data().statut || 'En ligne');
@@ -140,7 +139,11 @@ export default function Admin() {
 
   const changerStatut = async (nouveau) => {
     setStatut(nouveau);
-    await setDoc(doc(db, 'config', 'statut'), { statut: nouveau, updatedAt: new Date() });
+    await fetch('/api/set-statut', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ statut: nouveau }),
+    });
   };
 
   const accepterConsultation = async (id) => {
@@ -153,10 +156,12 @@ export default function Admin() {
       auteur: 'admin', type: 'message', lu: true, createdAt: serverTimestamp(),
     });
 
-    // Mettre le statut en consultation
-    await setDoc(doc(db, 'config', 'statut'), { statut: 'En consultation', updatedAt: new Date() });
+    await fetch('/api/set-statut', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ statut: 'En consultation' }),
+    });
 
-    // Points fidélité Wero
     const consultation = consultations.find(c => c.id === id);
     if (consultation && consultation.paiement === 'wero' && consultation.userId) {
       try {
@@ -241,8 +246,11 @@ export default function Admin() {
     await addDoc(collection(db, 'consultations', id, 'messages'), {
       texte: 'La consultation a ete cloturee.', auteur: 'system', type: 'alerte', createdAt: serverTimestamp(),
     });
-    // Remettre en ligne après consultation
-    await setDoc(doc(db, 'config', 'statut'), { statut: 'En ligne', updatedAt: new Date() });
+    await fetch('/api/set-statut', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ statut: 'En ligne' }),
+    });
   };
 
   const quickMsg = (txt) => setReponse(txt);
