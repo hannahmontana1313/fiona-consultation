@@ -151,9 +151,16 @@ export default function Home() {
 
       <main style={{ paddingBottom: '4rem' }}>
         <section style={{
-          textAlign: 'center', padding: '5rem 1.25rem 3rem',
-          position: 'relative', zIndex: 1,
-        }}>
+  textAlign: 'center', padding: '5rem 1.25rem 3rem',
+  position: 'relative', zIndex: 1,
+  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem',
+}}>
+  <img
+    src="/Gemini_Generated_Image_paa407paa407paa4.png"
+    alt="Fiona voyante"
+    style={{ width: 220, opacity: 0.9, flexShrink: 0 }}
+  />
+  <div style={{ flex: 1, maxWidth: 540 }}>
           <div className="badge badge-purple fade-up" style={{ marginBottom: '1.5rem' }}>
             ✦ Consultation privée & confidentielle ✦
           </div>
@@ -178,7 +185,7 @@ export default function Home() {
             sans jugement. Échange avec moi en direct, par message, comme une conversation privée.
           </p>
 
-          <div className="fade-up" style={{ animationDelay: '0.3s' }}>
+         <div className="fade-up" style={{ animationDelay: '0.3s' }}>
             <Link
               href={user ? '/reserver' : '/inscription'}
               className="btn btn-primary btn-lg pulse"
@@ -186,7 +193,13 @@ export default function Home() {
               ✦ Commencer une conversation
             </Link>
           </div>
-        </section>
+  </div>
+  <img
+    src="/Gemini_Generated_Image_paa407paa407paa4.png"
+    alt="Fiona voyante"
+    style={{ width: 220, opacity: 0.9, flexShrink: 0, transform: 'scaleX(-1)' }}
+  />
+</section>
 
         <div className="container">
           <section className="card fade-up" style={{ padding: '2.5rem', marginBottom: '1.5rem' }}>
