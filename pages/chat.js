@@ -153,33 +153,7 @@ useEffect(() => {
     secondesRestantes: 0,
     statut: 'terminee',
   });
-
-  // +10 points si consultation de +30 minutes
-  try {
-    if (consultation && consultation.minutes >= 30) {
-      const fideliteRef = doc(db, 'fidelite', user.uid);
-      const fideliteSnap = await getDoc(fideliteRef);
-      if (fideliteSnap.exists()) {
-        const data = fideliteSnap.data();
-        const nouveauxPoints = (data.points || 0) + 10;
-        const paliers = [150, 300, 600];
-        const cadeauxDebloques = [...(data.cadeauxDebloques || [])];
-        paliers.forEach(palier => {
-          if ((data.points || 0) < palier && nouveauxPoints >= palier && !cadeauxDebloques.includes(palier)) {
-            cadeauxDebloques.push(palier);
-          }
-        });
-        await updateDoc(fideliteRef, {
-          points: nouveauxPoints,
-          cadeauxDebloques,
-          updatedAt: serverTimestamp(),
-        });
-      }
-    }
-  } catch (err) {
-    console.error('Fidelite bonus 30min error:', err);
-  }
-
+  ajouterPointsBonus30min();
   return 0;
 }
         // Synchro Firestore toutes les 30s
@@ -256,6 +230,34 @@ useEffect(() => {
     setLoadingAjout(false);
   };
 
+  const ajouterPointsBonus30min = async () => {
+  try {
+    if (consultation && consultation.minutes >= 30) {
+      const fideliteRef = doc(db, 'fidelite', user.uid);
+      const fideliteSnap = await getDoc(fideliteRef);
+      if (fideliteSnap.exists()) {
+        const data = fideliteSnap.data();
+        const nouveauxPoints = (data.points || 0) + 10;
+        const paliers = [150, 300, 600];
+        const cadeauxDebloques = [...(data.cadeauxDebloques || [])];
+        paliers.forEach(palier => {
+          if ((data.points || 0) < palier && nouveauxPoints >= palier && !cadeauxDebloques.includes(palier)) {
+            cadeauxDebloques.push(palier);
+          }
+        });
+        await updateDoc(fideliteRef, {
+          points: nouveauxPoints,
+          cadeauxDebloques,
+          updatedAt: serverTimestamp(),
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Fidelite bonus 30min error:', err);
+  }
+};
+
+const envoyerAvis = async () => {
   const envoyerAvis = async () => {
   if (!avisTexte.trim() || !consultationId) return;
   await addDoc(collection(db, 'avis'), {
