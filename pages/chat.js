@@ -126,6 +126,7 @@ export default function Chat() {
   const msgsRef = useRef(null);
   const timerRef = useRef(null);
   const inputRef = useRef(null);
+  const timerStarted = useRef(false);
   const tarif = getTarifActuel();
 
   useEffect(() => {
@@ -151,8 +152,13 @@ export default function Chat() {
       if (!snap.exists()) return;
       const data = snap.data();
       setConsultation(data);
-      setSecrestantes(data.secondesRestantes ?? null);
       setLoading(false);
+
+      // On ne met à jour secondesRestantes depuis Firebase QUE si le timer n'a pas encore démarré
+      if (!timerStarted.current) {
+        setSecrestantes(data.secondesRestantes ?? null);
+      }
+
       if (data.statut === 'terminee') { setBloque(true); setAvisOpen(true); }
       if (data.statut === 'en_attente' || data.statut === 'active') setBloque(false);
       setAdminIsTyping(data.adminIsTyping || false);
@@ -197,6 +203,9 @@ export default function Chat() {
 
   useEffect(() => {
     if (secondesRestantes === null || bloque || consultation?.statut !== 'active') return;
+    if (timerRef.current) return; // évite de créer plusieurs intervalles
+
+    timerStarted.current = true;
     timerRef.current = setInterval(() => {
       setSecrestantes(prev => {
         const next = prev - 1;
@@ -205,6 +214,8 @@ export default function Chat() {
         if (next === 30 && !alertes.has(30)) { addSystemMsg('🔴 Moins de 30 secondes !'); setAlertes(a => new Set([...a, 30])); }
         if (next <= 0) {
           clearInterval(timerRef.current);
+          timerRef.current = null;
+          timerStarted.current = false;
           setBloque(true);
           addSystemMsg('⏳ Ton temps de consultation est terminé. Tu peux ajouter du temps pour continuer l\'échange sans perdre le fil.');
           updateDoc(doc(db, 'consultations', consultationId), { secondesRestantes: 0, statut: 'terminee' });
@@ -215,8 +226,12 @@ export default function Chat() {
         return next;
       });
     }, 1000);
-    return () => clearInterval(timerRef.current);
-  }, [secondesRestantes !== null, bloque, consultation?.statut]);
+
+    return () => {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    };
+  }, [consultation?.statut, bloque]);
 
   const formatTimer = (secs) => {
     if (secs === null) return '--:--';
@@ -370,12 +385,12 @@ export default function Chat() {
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✦</div>
             <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.6rem', color: 'var(--vd)', marginBottom: '1rem' }}>Tu es dans la salle d'attente</h1>
             <p style={{ color: 'var(--muted)', lineHeight: 1.7, marginBottom: '1.5rem' }}>
-  Ton paiement a bien été reçu. Je vais démarrer ta consultation très bientôt.
-  Le chronomètre ne démarrera qu'une fois que j'aurai accepté ta demande.
-</p>
-<div style={{ padding: '10px 16px', borderRadius: 'var(--r)', background: 'rgba(240,192,64,0.12)', border: '1px solid #F0C040', fontSize: '13px', color: '#7A4A00', marginBottom: '1rem', lineHeight: 1.6 }}>
-  ⚠️ <strong>Reste sur cette page !</strong> Le chronomètre démarre dès que j'accepte ta demande. Si tu fermes cet onglet tu risques de manquer le début de ta consultation.
-</div>
+              Ton paiement a bien été reçu. Je vais démarrer ta consultation très bientôt.
+              Le chronomètre ne démarrera qu'une fois que j'aurai accepté ta demande.
+            </p>
+            <div style={{ padding: '10px 16px', borderRadius: 'var(--r)', background: 'rgba(240,192,64,0.12)', border: '1px solid #F0C040', fontSize: '13px', color: '#7A4A00', marginBottom: '1rem', lineHeight: 1.6 }}>
+              ⚠️ <strong>Reste sur cette page !</strong> Le chronomètre démarre dès que j'accepte ta demande. Si tu fermes cet onglet tu risques de manquer le début de ta consultation.
+            </div>
             <div style={{ padding: '1rem', borderRadius: 'var(--r)', background: 'rgba(123,94,167,0.08)', border: '1px solid var(--vl)', fontSize: '14px', color: 'var(--vd)' }}>
               ⏳ En attente de confirmation…
             </div>
@@ -493,28 +508,22 @@ function NotifPermission({ consultationId, userId }) {
   const demanderPermission = async () => {
     try {
       setStatut('loading');
-
       if (!('Notification' in window)) {
         setErreurMsg('Ton navigateur ne supporte pas les notifications.');
         setStatut('erreur');
         return;
       }
-
       if (!('serviceWorker' in navigator)) {
         setErreurMsg('Service Worker non supporté sur ce navigateur.');
         setStatut('erreur');
         return;
       }
-
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') { setStatut('refuse'); return; }
-
       const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
       await navigator.serviceWorker.ready;
-
       const { initializeApp, getApps } = await import('firebase/app');
       const { getMessaging, getToken } = await import('firebase/messaging');
-
       const firebaseConfig = {
         apiKey: "AIzaSyAJYaMUIkIvXOFSUSlUXEgyO7PcplJqBhs",
         authDomain: "fiona-consultation.firebaseapp.com",
@@ -523,15 +532,12 @@ function NotifPermission({ consultationId, userId }) {
         messagingSenderId: "149410595083",
         appId: "1:149410595083:web:0c25164b06d8745049e20e"
       };
-
       const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
-
       const token = await getToken(messaging, {
         vapidKey: 'BBHcLnPlznzowt_SCUJ0LnTk0gWTHT-BsNA0YNaVhcV6_QOzs8sKc4__px7v1QSXKFudap6kibvS9iFGs2pd-v4',
         serviceWorkerRegistration: registration,
       });
-
       if (token && consultationId && userId) {
         await updateDoc(doc(db, 'consultations', consultationId), { fcmToken: token });
         setStatut('ok');
@@ -551,13 +557,11 @@ function NotifPermission({ consultationId, userId }) {
       ✅ Tu recevras une notification quand ce sera ton tour !
     </div>
   );
-
   if (statut === 'refuse') return (
     <div style={{ marginTop: '1rem', padding: '10px 16px', borderRadius: 'var(--r)', background: 'rgba(200,60,80,0.08)', color: '#A02040', fontSize: '13px', textAlign: 'center' }}>
       ❌ Notifications refusées. Reste sur la page pour ne pas rater ton tour.
     </div>
   );
-
   if (statut === 'erreur') return (
     <div style={{ marginTop: '1rem', padding: '10px 16px', borderRadius: 'var(--r)', background: 'rgba(200,60,80,0.08)', color: '#A02040', fontSize: '13px', textAlign: 'center' }}>
       ❌ {erreurMsg || 'Notifications non disponibles sur ce navigateur.'}
