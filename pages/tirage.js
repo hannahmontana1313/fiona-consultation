@@ -96,8 +96,7 @@ export default function Tirage() {
       const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
       setMessages(msgs);
-      // Détecter le message de fin automatique
-      const msgFin = msgs.find(m => m.auteur === 'admin' && messages.indexOf(m) === messages.length - 1 && m.texte?.includes('consultation privée'));
+      const msgFin = msgs.find(m => m.texte?.includes('consultation privée'));
       if (msgFin) {
         setBloque(true);
         setTimeout(() => setAvisOpen(true), 1500);
