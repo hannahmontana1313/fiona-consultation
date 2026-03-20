@@ -106,26 +106,32 @@ export default function TirageReserver() {
 
   const handlePayer = async () => {
     if (!prenom.trim()) return setError('Merci d\'indiquer ton prénom.');
-    setLoading(true);
     setError('');
 
     if (cadeauAnniversaire) {
-      if (!prenom.trim()) return setError('Merci d\'indiquer ton prénom.');
-      await updateDoc(doc(db, 'cadeauxAnniversaire', user.uid), { utilise: true });
-      const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
-      const { db: firestoreDb } = await import('../lib/firebase');
-      await addDoc(collection(firestoreDb, 'tirages'), {
-        userId: user.uid,
-        prenom,
-        telephone,
-        statut: 'en_attente',
-        gratuit: 'anniversaire',
-        montant: 0,
-        createdAt: serverTimestamp(),
-      });
-      router.push('/tirage?gratuit=anniversaire');
+      setLoading(true);
+      try {
+        await updateDoc(doc(db, 'cadeauxAnniversaire', user.uid), { utilise: true });
+        const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+        const { db: firestoreDb } = await import('../lib/firebase');
+        const tirageRef = await addDoc(collection(firestoreDb, 'tirages'), {
+          userId: user.uid,
+          prenom,
+          telephone: telephone || '',
+          statut: 'en_attente',
+          gratuit: 'anniversaire',
+          montant: 0,
+          createdAt: serverTimestamp(),
+        });
+        router.push('/tirage?id=' + tirageRef.id + '&gratuit=anniversaire');
+      } catch(err) {
+        setError('Erreur : ' + err.message);
+        setLoading(false);
+      }
       return;
     }
+
+    setLoading(true);
 
     await marquerCadeauUtilise();
     try {
