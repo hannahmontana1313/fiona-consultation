@@ -9,8 +9,6 @@ import { db } from '../lib/firebase';
 import { useAuth } from '../components/AuthContext';
 import Stars from '../components/Stars';
 import { getTarifActuel } from '../lib/stripe';
-import { getMessaging, getToken } from 'firebase/messaging';
-import { getApp } from 'firebase/app';
 
 function Morpion() {
   const [board, setBoard] = useState(Array(9).fill(null));
@@ -376,12 +374,10 @@ export default function Chat() {
               Le chronomètre ne démarrera qu'une fois que j'aurai accepté ta demande.
             </p>
             <div style={{ padding: '1rem', borderRadius: 'var(--r)', background: 'rgba(123,94,167,0.08)', border: '1px solid var(--vl)', fontSize: '14px', color: 'var(--vd)' }}>
-  ⏳ En attente de confirmation…
-</div>
-
-<NotifPermission consultationId={consultationId} userId={user?.uid} />
-
-<Morpion />
+              ⏳ En attente de confirmation…
+            </div>
+            <NotifPermission consultationId={consultationId} userId={user?.uid} />
+            <Morpion />
           </div>
         </div>
       </>
@@ -486,6 +482,7 @@ export default function Chat() {
     </>
   );
 }
+
 function NotifPermission({ consultationId, userId }) {
   const [statut, setStatut] = useState('idle');
   const [erreurMsg, setErreurMsg] = useState('');
@@ -527,32 +524,16 @@ function NotifPermission({ consultationId, userId }) {
       const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
 
-      const vapidKey = 'BBHcLnPlznzowt_SCUJ0LnTk0gWTHT-BsNA0YNaVhcV6_QOzs8sKc4__px7v1QSXKFudap6kibvS9iFGs2pd-v4';
-
-const convertVapidKey = (base64String) => {
-  const base64 = base64String
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
-  const padding = '='.repeat((4 - (base64.length % 4)) % 4);
-  const raw = atob(base64 + padding);
-  const buffer = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i++) {
-    buffer[i] = raw.charCodeAt(i);
-  }
-  return buffer;
-};
-
-const token = await getToken(messaging, {
-  vapidKey: convertVapidKey(vapidKey),
-  serviceWorkerRegistration: registration,
-});
-
+      const token = await getToken(messaging, {
+        vapidKey: 'BBHcLnPlznzowt_SCUJ0LnTk0gWTHT-BsNA0YNaVhcV6_QOzs8sKc4__px7v1QSXKFudap6kibvS9iFGs2pd-v4',
+        serviceWorkerRegistration: registration,
+      });
 
       if (token && consultationId && userId) {
         await updateDoc(doc(db, 'consultations', consultationId), { fcmToken: token });
         setStatut('ok');
       } else {
-        setErreurMsg('Impossible de récupérer le token. Réessaie.');
+        setErreurMsg('Token non reçu. Réessaie.');
         setStatut('erreur');
       }
     } catch (err) {
@@ -579,7 +560,8 @@ const token = await getToken(messaging, {
       ❌ {erreurMsg || 'Notifications non disponibles sur ce navigateur.'}
     </div>
   );
-return (
+
+  return (
     <div style={{ marginTop: '1rem' }}>
       <button onClick={demanderPermission} disabled={statut === 'loading'} style={{ width: '100%', padding: '12px', borderRadius: '50px', background: 'linear-gradient(135deg, var(--v), var(--pd))', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: '14px' }}>
         {statut === 'loading' ? 'Activation…' : '🔔 M\'avertir quand c\'est mon tour'}
