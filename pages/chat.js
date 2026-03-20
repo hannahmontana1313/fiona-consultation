@@ -146,16 +146,42 @@ useEffect(() => {
           setAlertes(a => new Set([...a, 30]));
         }
         if (next <= 0) {
-          clearInterval(timerRef.current);
-          setBloque(true);
-          addSystemMsg('⏳ Ton temps de consultation est terminé. Tu peux ajouter du temps pour continuer l\'échange sans perdre le fil.');
-          updateDoc(doc(db, 'consultations', consultationId), {
-            secondesRestantes: 0,
-            statut: 'terminee',
-          });
-          return 0;
-        }
+  clearInterval(timerRef.current);
+  setBloque(true);
+  addSystemMsg('⏳ Ton temps de consultation est terminé. Tu peux ajouter du temps pour continuer l\'échange sans perdre le fil.');
+  updateDoc(doc(db, 'consultations', consultationId), {
+    secondesRestantes: 0,
+    statut: 'terminee',
+  });
 
+  // +10 points si consultation de +30 minutes
+  try {
+    if (consultation && consultation.minutes >= 30) {
+      const fideliteRef = doc(db, 'fidelite', user.uid);
+      const fideliteSnap = await getDoc(fideliteRef);
+      if (fideliteSnap.exists()) {
+        const data = fideliteSnap.data();
+        const nouveauxPoints = (data.points || 0) + 10;
+        const paliers = [150, 300, 600];
+        const cadeauxDebloques = [...(data.cadeauxDebloques || [])];
+        paliers.forEach(palier => {
+          if ((data.points || 0) < palier && nouveauxPoints >= palier && !cadeauxDebloques.includes(palier)) {
+            cadeauxDebloques.push(palier);
+          }
+        });
+        await updateDoc(fideliteRef, {
+          points: nouveauxPoints,
+          cadeauxDebloques,
+          updatedAt: serverTimestamp(),
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Fidelite bonus 30min error:', err);
+  }
+
+  return 0;
+}
         // Synchro Firestore toutes les 30s
         if (next % 30 === 0) {
           updateDoc(doc(db, 'consultations', consultationId), {
