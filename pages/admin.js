@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import {
   collection, doc, onSnapshot, query, orderBy,
-  addDoc, updateDoc, serverTimestamp, where, getDoc, setDoc,
+  addDoc, updateDoc, serverTimestamp, where, getDoc, setDoc, deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../components/AuthContext';
@@ -577,9 +577,16 @@ function AvisAdmin() {
     const q = collection(db, 'avis');
     return onSnapshot(q, snap => setAvis(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
   }, []);
+
   const toggleVisible = async (id, visible) => {
     await updateDoc(doc(db, 'avis', id), { visible: !visible });
   };
+
+  const supprimerAvis = async (id) => {
+    if (!confirm('Supprimer définitivement cet avis ?')) return;
+    await deleteDoc(doc(db, 'avis', id));
+  };
+
   return (
     <div style={{ padding: '1rem' }}>
       {avis.length === 0 && <p style={{ color: 'var(--muted)', padding: '1rem' }}>Aucun avis pour l'instant.</p>}
@@ -592,9 +599,14 @@ function AvisAdmin() {
             <p style={{ fontSize: '14px', color: 'var(--txt)', marginBottom: '4px', fontStyle: 'italic' }}>"{a.texte}"</p>
             <div style={{ fontSize: '12px', color: 'var(--muted)' }}>— {a.prenom}</div>
           </div>
-          <button onClick={() => toggleVisible(a.id, a.visible)} style={{ padding: '6px 14px', borderRadius: '50px', border: 'none', cursor: 'pointer', background: a.visible ? 'rgba(60,160,100,0.15)' : 'rgba(200,60,80,0.1)', color: a.visible ? '#1A7040' : '#A02040', fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }}>
-            {a.visible ? '✅ Visible' : '👁 Publier'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button onClick={() => toggleVisible(a.id, a.visible)} style={{ padding: '6px 14px', borderRadius: '50px', border: 'none', cursor: 'pointer', background: a.visible ? 'rgba(60,160,100,0.15)' : 'rgba(200,60,80,0.1)', color: a.visible ? '#1A7040' : '#A02040', fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }}>
+              {a.visible ? '✅ Visible' : '👁 Publier'}
+            </button>
+            <button onClick={() => supprimerAvis(a.id)} style={{ padding: '6px 14px', borderRadius: '50px', border: '1px solid #E0B0C0', background: 'rgba(200,60,80,0.06)', color: '#A02040', cursor: 'pointer', fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap' }}>
+              🗑 Supprimer
+            </button>
+          </div>
         </div>
       ))}
     </div>
