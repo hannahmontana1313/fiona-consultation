@@ -8,10 +8,9 @@ import { useAuth } from '../components/AuthContext';
 export default function Inscription() {
   const { inscription } = useAuth();
   const router = useRouter();
-  const [form, setForm] = useState({ prenom: '', email: '', password: '', confirm: '' });
+  const [form, setForm] = useState({ prenom: '', email: '', password: '', confirm: '', dateNaissance: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
   const handle = e => setForm({ ...form, [e.target.name]: e.target.value });
 
   const submit = async e => {
@@ -19,9 +18,10 @@ export default function Inscription() {
     setError('');
     if (form.password !== form.confirm) return setError('Les mots de passe ne correspondent pas.');
     if (form.password.length < 6) return setError('Mot de passe trop court (6 caractères min).');
+    if (!form.dateNaissance) return setError('Merci d\'entrer ta date de naissance.');
     setLoading(true);
     try {
-      await inscription(form.email, form.password, form.prenom);
+      await inscription(form.email, form.password, form.prenom, form.dateNaissance);
       router.push('/reserver');
     } catch (err) {
       const msgs = {
@@ -53,7 +53,6 @@ export default function Inscription() {
               Gratuit · Accès immédiat à la consultation
             </p>
           </div>
-
           <form onSubmit={submit} style={{ padding: '2rem' }}>
             <div className="form-group">
               <label className="form-label">Ton prénom</label>
@@ -66,6 +65,14 @@ export default function Inscription() {
                 onChange={handle} placeholder="ton@email.com" required />
             </div>
             <div className="form-group">
+              <label className="form-label">Date de naissance 🎂</label>
+              <input className="input" name="dateNaissance" type="date" value={form.dateNaissance}
+                onChange={handle} required />
+              <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
+                Pour recevoir un cadeau le jour de ton anniversaire 🎁
+              </p>
+            </div>
+            <div className="form-group">
               <label className="form-label">Mot de passe</label>
               <input className="input" name="password" type="password" value={form.password}
                 onChange={handle} placeholder="6 caractères minimum" required />
@@ -75,13 +82,10 @@ export default function Inscription() {
               <input className="input" name="confirm" type="password" value={form.confirm}
                 onChange={handle} placeholder="Répète ton mot de passe" required />
             </div>
-
             {error && <p className="form-error" style={{ marginBottom: '1rem' }}>{error}</p>}
-
             <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
               {loading ? 'Création en cours…' : 'Créer mon compte ✦'}
             </button>
-
             <p style={{ textAlign: 'center', fontSize: '13px', color: 'var(--muted)', marginTop: '1rem' }}>
               Déjà un compte ?{' '}
               <Link href="/connexion" style={{ color: 'var(--v)', fontWeight: 500 }}>
