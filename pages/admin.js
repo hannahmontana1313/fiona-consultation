@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import {
   collection, doc, onSnapshot, query, orderBy,
-  addDoc, updateDoc, serverTimestamp, where,
+  addDoc, updateDoc, serverTimestamp, where, getDoc, setDoc,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../components/AuthContext';
@@ -139,6 +139,59 @@ export default function Admin() {
       texte: "Coucou et bienvenue ✨ Prends quelques instants pour m'expliquer ta situation calmement. Ensuite, pose-moi tes questions une par une pour que je puisse te répondre de la façon la plus claire possible. Le temps de consultation est en cours et le compteur s'affiche en haut du chat.",
       auteur: 'admin', type: 'message', lu: true, createdAt: serverTimestamp(),
     });
+
+    // Points fidélité Wero
+    const consultation = consultations.find(c => c.id === id);
+    if (consultation && consultation.paiement === 'wero' && consultation.userId) {
+      try {
+        const fideliteRef = doc(db, 'fidelite', consultation.userId);
+        const fideliteSnap = await getDoc(fideliteRef);
+        const montantEuros = parseFloat(consultation.montant || 0);
+
+        const getStatutVIP = (total) => {
+          if (total >= 600) return 'vip';
+          if (total >= 300) return 'gold';
+          if (total >= 100) return 'silver';
+          return 'bronze';
+        };
+
+        if (!fideliteSnap.exists()) {
+          const pointsInitiaux = Math.floor(montantEuros) + 20;
+          await setDoc(fideliteRef, {
+            userId: consultation.userId,
+            points: pointsInitiaux,
+            totalDepense: montantEuros,
+            statut: getStatutVIP(montantEuros),
+            premiereConsultation: true,
+            cadeauxUtilises: [],
+            cadeauxDebloques: [],
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        } else {
+          const data = fideliteSnap.data();
+          const nouveauTotal = (data.totalDepense || 0) + montantEuros;
+          const nouveauxPoints = (data.points || 0) + Math.floor(montantEuros);
+          const paliers = [150, 300, 600];
+          const ancienPoints = data.points || 0;
+          const cadeauxDebloques = [...(data.cadeauxDebloques || [])];
+          paliers.forEach(palier => {
+            if (ancienPoints < palier && nouveauxPoints >= palier && !cadeauxDebloques.includes(palier)) {
+              cadeauxDebloques.push(palier);
+            }
+          });
+          await updateDoc(fideliteRef, {
+            points: nouveauxPoints,
+            totalDepense: nouveauTotal,
+            statut: getStatutVIP(nouveauTotal),
+            cadeauxDebloques,
+            updatedAt: serverTimestamp(),
+          });
+        }
+      } catch (err) {
+        console.error('Fidelite Wero error:', err);
+      }
+    }
   };
 
   const handleTyping = async () => {
