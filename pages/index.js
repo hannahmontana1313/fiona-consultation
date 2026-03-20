@@ -186,9 +186,8 @@ export default function Home() {
               ✦ Commencer une conversation
             </Link>
           </div>
-  </div>
-  
-</section>
+        </section>
+        
 
         <div className="container">
           <section className="card fade-up" style={{ padding: '2.5rem', marginBottom: '1.5rem' }}>
