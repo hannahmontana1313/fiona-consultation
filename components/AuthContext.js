@@ -73,11 +73,14 @@ export const AuthProvider = ({ children }) => {
   const deconnexion = async () => {
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
     if (user?.email === adminEmail) {
-      await fetch('/api/set-statut', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ statut: 'Hors ligne' }),
-      }).catch(() => {});
+      try {
+        await fetch('/api/set-statut', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ statut: 'Hors ligne' }),
+        });
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch(e) {}
     }
     return signOut(auth);
   };
