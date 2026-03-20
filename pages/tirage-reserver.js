@@ -123,7 +123,7 @@ export default function TirageReserver() {
           montant: 0,
           createdAt: serverTimestamp(),
         });
-        router.push('/tirage?id=' + tirageRef.id + '&gratuit=anniversaire');
+        router.push('/tirage?tirage_id=' + tirageRef.id + '&gratuit=anniversaire');
       } catch(err) {
         setError('Erreur : ' + err.message);
         setLoading(false);
