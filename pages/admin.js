@@ -22,10 +22,10 @@ export default function Admin() {
   const [timers, setTimers] = useState({});
   const [onglet, setOnglet] = useState('conversations');
   const [avis, setAvis] = useState([]);
-const [tiragesEnAttente, setTiragesEnAttente] = useState(0);
+  const [tiragesEnAttente, setTiragesEnAttente] = useState(0);
   const notifSound = useRef(null);
   const msgsRef = useRef(null);
-  const prevMsgCount = useRef(0);
+  const prevConsultationIds = useRef(new Set());
   const timerIntervals = useRef({});
 
   useEffect(() => {
@@ -54,8 +54,8 @@ const [tiragesEnAttente, setTiragesEnAttente] = useState(0);
   }, [user, isAdmin, loading]);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'avis'), snap => {
-      setAvis(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    const unsub = onSnapshot(doc(db, 'config', 'statut'), snap => {
+      if (snap.exists()) setStatut(snap.data().statut || 'En ligne');
     });
     return unsub;
   }, []);
@@ -63,6 +63,14 @@ const [tiragesEnAttente, setTiragesEnAttente] = useState(0);
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'avis'), snap => {
       setAvis(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'tirages'), snap => {
+      const enAttente = snap.docs.filter(d => d.data().statut === 'en_attente').length;
+      setTiragesEnAttente(enAttente);
     });
     return unsub;
   }, []);
@@ -104,12 +112,19 @@ const [tiragesEnAttente, setTiragesEnAttente] = useState(0);
     const q = query(collection(db, 'consultations'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, snap => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      const nouvellesAttentes = data.filter(c =>
-        c.statut === 'en_attente' && !(c.id in timers)
-      );
-      if (nouvellesAttentes.length > 0 && sonActif) {
-        notifSound.current?.play().catch(() => {});
+
+      // Son uniquement pour les NOUVELLES consultations en attente
+      if (sonActif) {
+        data.forEach(c => {
+          if (c.statut === 'en_attente' && !prevConsultationIds.current.has(c.id)) {
+            notifSound.current?.play().catch(() => {});
+          }
+        });
       }
+
+      // Mettre à jour la liste des IDs connus
+      prevConsultationIds.current = new Set(data.map(c => c.id));
+
       setConsultations(data);
       data.forEach(c => {
         if (!(c.id in timers)) {
@@ -128,11 +143,10 @@ const [tiragesEnAttente, setTiragesEnAttente] = useState(0);
     );
     const unsub = onSnapshot(q, snap => {
       const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      if (msgs.length > prevMsgCount.current) {
-        const last = msgs[msgs.length - 1];
-        if (last?.auteur === 'client' && sonActif) notifSound.current?.play().catch(() => {});
+      const dernierMsg = msgs[msgs.length - 1];
+      if (dernierMsg?.auteur === 'client' && sonActif) {
+        notifSound.current?.play().catch(() => {});
       }
-      prevMsgCount.current = msgs.length;
       setMessages(msgs);
       setTimeout(() => {
         if (msgsRef.current) msgsRef.current.scrollTop = msgsRef.current.scrollHeight;
@@ -165,7 +179,6 @@ const [tiragesEnAttente, setTiragesEnAttente] = useState(0);
       auteur: 'admin', type: 'message', lu: true, createdAt: serverTimestamp(),
     });
 
-    // Envoyer notification push au client
     fetch('/api/send-notif', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -336,19 +349,19 @@ const [tiragesEnAttente, setTiragesEnAttente] = useState(0);
               {statut === 'En ligne' ? 'Passer hors ligne' : 'Passer en ligne'}
             </button>
             <button onClick={() => { setSonActif(s => !s); notifSound.current?.play().catch(() => {}); }} className="btn btn-outline" style={{ fontSize: '13px', padding: '7px 16px' }}>
-  {sonActif ? 'Son active' : 'Activer le son'}
-</button>
-<button onClick={async () => {
-  await fetch('/api/set-statut', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ statut: 'Hors ligne' }),
-  });
-  await deconnexion();
-  router.push('/');
-}} className="btn btn-outline" style={{ fontSize: '13px', padding: '7px 16px', color: '#A02040', borderColor: '#E0B0C0' }}>
-  🔴 Se déconnecter
-</button>
+              {sonActif ? 'Son activé 🔊' : 'Activer le son 🔇'}
+            </button>
+            <button onClick={async () => {
+              await fetch('/api/set-statut', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ statut: 'Hors ligne' }),
+              });
+              await deconnexion();
+              router.push('/');
+            }} className="btn btn-outline" style={{ fontSize: '13px', padding: '7px 16px', color: '#A02040', borderColor: '#E0B0C0' }}>
+              🔴 Se déconnecter
+            </button>
           </div>
         </div>
 
@@ -380,15 +393,15 @@ const [tiragesEnAttente, setTiragesEnAttente] = useState(0);
                   )}
                 </span>
               ) : (
-  <span>
-    🔮 Tirages
-    {tiragesEnAttente > 0 && (
-      <span style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: '#C0305A', color: '#fff', fontSize: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {tiragesEnAttente}
-      </span>
-    )}
-  </span>
-)}
+                <span>
+                  🔮 Tirages
+                  {tiragesEnAttente > 0 && (
+                    <span style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: '#C0305A', color: '#fff', fontSize: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {tiragesEnAttente}
+                    </span>
+                  )}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -568,7 +581,8 @@ const [tiragesEnAttente, setTiragesEnAttente] = useState(0);
                             {msg.texte}
                           </div>
                           <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '3px', padding: '0 4px' }}>
-                            {msg.auteur === 'admin' ? 'Fiona' : selectedData.prenom} - {msg.createdAt && msg.createdAt.toDate ? msg.createdAt.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                            {msg.auteur === 'admin' ? 'Fiona' : selectedData.prenom} · {msg.createdAt && msg.createdAt.toDate ? msg.createdAt.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                            {isAdminMsg && <span style={{ marginLeft: '4px', color: msg.lu ? '#3CA060' : 'var(--muted)' }}>{msg.lu ? '✓✓' : '✓'}</span>}
                           </div>
                         </div>
                       );
@@ -675,6 +689,7 @@ function TiragesAdmin() {
     });
     await updateDoc(doc(db, 'tirages', selectedTirage), {
       lastMessageAdmin: texte, lastMessageAdminAt: serverTimestamp(),
+      statut: 'en_cours',
     });
     await new Promise(resolve => setTimeout(resolve, 2000));
     await addDoc(collection(db, 'tirages', selectedTirage, 'messages'), {
@@ -694,8 +709,11 @@ function TiragesAdmin() {
       <div style={{ background: 'rgba(255,255,255,0.88)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', overflowY: 'auto' }}>
         {tirages.length === 0 && <p style={{ color: 'var(--muted)', padding: '1rem', fontSize: '14px' }}>Aucun tirage pour l'instant.</p>}
         {tirages.map(t => (
-          <div key={t.id} onClick={() => setSelectedTirage(t.id)} style={{ padding: '0.85rem 1rem', cursor: 'pointer', borderBottom: '1px solid var(--border)', background: selectedTirage === t.id ? 'rgba(123,94,167,0.1)' : 'transparent' }}>
-            <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--vd)' }}>🔮 {t.prenom}</div>
+          <div key={t.id} onClick={() => setSelectedTirage(t.id)} style={{ padding: '0.85rem 1rem', cursor: 'pointer', borderBottom: '1px solid var(--border)', background: selectedTirage === t.id ? 'rgba(123,94,167,0.1)' : t.statut === 'en_attente' ? 'rgba(255,220,100,0.1)' : 'transparent' }}>
+            <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--vd)', display: 'flex', justifyContent: 'space-between' }}>
+              <span>🔮 {t.prenom}</span>
+              {t.statut === 'en_attente' && <span style={{ fontSize: '10px', background: '#F0C040', color: '#7A4A00', padding: '2px 6px', borderRadius: '50px' }}>Nouveau</span>}
+            </div>
             <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '3px' }}>
               {t.carteNom || 'Carte non tirée'} · {t.statut}
             </div>
@@ -712,6 +730,7 @@ function TiragesAdmin() {
               <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
                 Carte : <strong>{tirageSelectionne.carteNom || 'Non tirée'}</strong>
                 {tirageSelectionne.telephone ? ' · Tel: ' + tirageSelectionne.telephone : ''}
+                {tirageSelectionne.gratuit === 'anniversaire' && <span style={{ marginLeft: '6px', color: '#F0C040' }}>🎂 Cadeau anniversaire</span>}
               </div>
               {tirageSelectionne.question && (
                 <div style={{ marginTop: '8px', padding: '8px 12px', background: 'rgba(123,94,167,0.06)', borderRadius: 'var(--r)', fontSize: '13px', color: 'var(--vd)', fontStyle: 'italic' }}>
