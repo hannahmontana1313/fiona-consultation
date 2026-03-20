@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { db } from '../lib/firebase';
-import { doc, onSnapshot, collection, addDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, onSnapshot, collection, addDoc, serverTimestamp, updateDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../components/AuthContext';
 import Stars from '../components/Stars';
 import Navbar from '../components/Navbar';
@@ -11,7 +11,7 @@ const CARTES_LENORMAND = [
   { id: 2, nom: 'Le Trèfle', emoji: '🍀', couleur: '#90EE90', description: 'Chance, petits bonheurs, espoir' },
   { id: 3, nom: 'Le Navire', emoji: '⛵', couleur: '#87CEEB', description: 'Voyage, commerce, ambition' },
   { id: 4, nom: 'La Maison', emoji: '🏠', couleur: '#DEB887', description: 'Foyer, sécurité, famille' },
-  { id: 5, nom: 'L\'Arbre', emoji: '🌳', couleur: '#228B22', description: 'Santé, racines, croissance' },
+  { id: 5, nom: "L'Arbre", emoji: '🌳', couleur: '#228B22', description: 'Santé, racines, croissance' },
   { id: 6, nom: 'Les Nuages', emoji: '☁️', couleur: '#B0C4DE', description: 'Confusion, doutes, incertitude' },
   { id: 7, nom: 'Le Serpent', emoji: '🐍', couleur: '#9ACD32', description: 'Sagesse, tentation, rivalité' },
   { id: 8, nom: 'Le Cercueil', emoji: '⚰️', couleur: '#696969', description: 'Fin, transformation, renouveau' },
@@ -19,10 +19,10 @@ const CARTES_LENORMAND = [
   { id: 10, nom: 'La Faux', emoji: '🌾', couleur: '#DAA520', description: 'Décision, coupure, récolte' },
   { id: 11, nom: 'Le Fouet', emoji: '⚡', couleur: '#FF6347', description: 'Conflits, répétition, sport' },
   { id: 12, nom: 'Les Oiseaux', emoji: '🐦', couleur: '#87CEEB', description: 'Communication, couple, bavardage' },
-  { id: 13, nom: 'L\'Enfant', emoji: '👶', couleur: '#FFD700', description: 'Nouveauté, innocence, début' },
+  { id: 13, nom: "L'Enfant", emoji: '👶', couleur: '#FFD700', description: 'Nouveauté, innocence, début' },
   { id: 14, nom: 'Le Renard', emoji: '🦊', couleur: '#FF8C00', description: 'Ruse, travail, méfiance' },
-  { id: 15, nom: 'L\'Ours', emoji: '🐻', couleur: '#8B4513', description: 'Force, autorité, protection' },
-  { id: 16, nom: 'L\'Étoile', emoji: '⭐', couleur: '#FFD700', description: 'Espoir, guidance, avenir lumineux' },
+  { id: 15, nom: "L'Ours", emoji: '🐻', couleur: '#8B4513', description: 'Force, autorité, protection' },
+  { id: 16, nom: "L'Étoile", emoji: '⭐', couleur: '#FFD700', description: 'Espoir, guidance, avenir lumineux' },
   { id: 17, nom: 'La Cigogne', emoji: '🦢', couleur: '#F0F8FF', description: 'Changement, évolution, mouvement' },
   { id: 18, nom: 'Le Chien', emoji: '🐕', couleur: '#DEB887', description: 'Amitié, fidélité, confiance' },
   { id: 19, nom: 'La Tour', emoji: '🗼', couleur: '#A9A9A9', description: 'Solitude, institution, ambition' },
@@ -31,17 +31,17 @@ const CARTES_LENORMAND = [
   { id: 22, nom: 'Les Chemins', emoji: '🛤️', couleur: '#F4A460', description: 'Choix, décision, carrefour' },
   { id: 23, nom: 'Les Souris', emoji: '🐭', couleur: '#BC8F8F', description: 'Perte, stress, diminution' },
   { id: 24, nom: 'Le Cœur', emoji: '❤️', couleur: '#FF69B4', description: 'Amour, sentiment, joie' },
-  { id: 25, nom: 'L\'Anneau', emoji: '💍', couleur: '#FFD700', description: 'Engagement, contrat, cycle' },
+  { id: 25, nom: "L'Anneau", emoji: '💍', couleur: '#FFD700', description: 'Engagement, contrat, cycle' },
   { id: 26, nom: 'Le Livre', emoji: '📚', couleur: '#4169E1', description: 'Secret, connaissance, mystère' },
   { id: 27, nom: 'La Lettre', emoji: '✉️', couleur: '#F5DEB3', description: 'Message, document, nouvelle' },
-  { id: 28, nom: 'L\'Homme', emoji: '👨', couleur: '#4682B4', description: 'Homme important, consultant' },
+  { id: 28, nom: "L'Homme", emoji: '👨', couleur: '#4682B4', description: 'Homme important, consultant' },
   { id: 29, nom: 'La Femme', emoji: '👩', couleur: '#DB7093', description: 'Femme importante, consultante' },
   { id: 30, nom: 'Les Lys', emoji: '🌸', couleur: '#DDA0DD', description: 'Paix, sagesse, sensualité' },
   { id: 31, nom: 'Le Soleil', emoji: '☀️', couleur: '#FFD700', description: 'Succès, énergie, clarté' },
   { id: 32, nom: 'La Lune', emoji: '🌙', couleur: '#9370DB', description: 'Intuition, rêves, reconnaissance' },
   { id: 33, nom: 'La Clé', emoji: '🗝️', couleur: '#DAA520', description: 'Solution, certitude, succès' },
   { id: 34, nom: 'Le Poisson', emoji: '🐟', couleur: '#00CED1', description: 'Argent, abondance, indépendance' },
-  { id: 35, nom: 'L\'Ancre', emoji: '⚓', couleur: '#2F4F4F', description: 'Stabilité, persévérance, travail' },
+  { id: 35, nom: "L'Ancre", emoji: '⚓', couleur: '#2F4F4F', description: 'Stabilité, persévérance, travail' },
   { id: 36, nom: 'La Croix', emoji: '✝️', couleur: '#8B0000', description: 'Destin, épreuve, foi' },
 ];
 
@@ -58,6 +58,11 @@ export default function Tirage() {
   const [questionEnvoyee, setQuestionEnvoyee] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [bloque, setBloque] = useState(false);
+  const [avisOpen, setAvisOpen] = useState(false);
+  const [avisNote, setAvisNote] = useState(5);
+  const [avisTexte, setAvisTexte] = useState('');
+  const [avisEnvoye, setAvisEnvoye] = useState(false);
 
   useEffect(() => {
     if (!router.isReady || !user) return;
@@ -68,12 +73,17 @@ export default function Tirage() {
     if (!tirage_id) return;
     const unsub = onSnapshot(doc(db, 'tirages', tirage_id), snap => {
       if (!snap.exists()) return;
-      setTirage(snap.data());
+      const data = snap.data();
+      setTirage(data);
       setLoading(false);
-      if (snap.data().carteId) {
-        const carte = CARTES_LENORMAND.find(c => c.id === snap.data().carteId);
+      if (data.carteId) {
+        const carte = CARTES_LENORMAND.find(c => c.id === data.carteId);
         setCarteChoisie(carte);
         setCarteRetournee(true);
+      }
+      if (data.statut === 'termine') {
+        setBloque(true);
+        setAvisOpen(true);
       }
     });
     return unsub;
@@ -86,6 +96,12 @@ export default function Tirage() {
       const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
       setMessages(msgs);
+      // Détecter le message de fin automatique
+      const msgFin = msgs.find(m => m.texte?.includes("N'hésite pas à prendre une consultation privée"));
+      if (msgFin) {
+        setBloque(true);
+        setTimeout(() => setAvisOpen(true), 1500);
+      }
     });
     return unsub;
   }, [tirage_id]);
@@ -112,7 +128,7 @@ export default function Tirage() {
   };
 
   const envoyerMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || bloque) return;
     const texte = input.trim();
     setInput('');
     await addDoc(collection(db, 'tirages', tirage_id, 'messages'), {
@@ -125,6 +141,35 @@ export default function Tirage() {
       lastMessageAt: serverTimestamp(),
       messagesNonLus: (tirage?.messagesNonLus || 0) + 1,
     });
+  };
+
+  const envoyerAvis = async () => {
+    if (!avisTexte.trim()) return;
+    await addDoc(collection(db, 'avis'), {
+      consultationId: tirage_id,
+      userId: user.uid,
+      prenom: tirage?.prenom || '',
+      note: avisNote,
+      texte: avisTexte,
+      visible: false,
+      createdAt: serverTimestamp(),
+    });
+    try {
+      const fideliteRef = doc(db, 'fidelite', user.uid);
+      const fideliteSnap = await getDoc(fideliteRef);
+      if (fideliteSnap.exists()) {
+        const data = fideliteSnap.data();
+        const nouveauxPoints = (data.points || 0) + 5;
+        const paliers = [150, 300, 600];
+        const cadeauxDebloques = [...(data.cadeauxDebloques || [])];
+        paliers.forEach(palier => {
+          if ((data.points || 0) < palier && nouveauxPoints >= palier && !cadeauxDebloques.includes(palier)) cadeauxDebloques.push(palier);
+        });
+        await updateDoc(fideliteRef, { points: nouveauxPoints, cadeauxDebloques, updatedAt: serverTimestamp() });
+      }
+    } catch (err) { console.error('Fidelite avis error:', err); }
+    setAvisEnvoye(true);
+    setAvisOpen(false);
   };
 
   if (loading) return (
@@ -142,7 +187,6 @@ export default function Tirage() {
       <Navbar />
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '2rem 1rem' }}>
 
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.8rem', color: 'var(--vd)', marginBottom: '0.5rem' }}>
             🔮 Tirage Lenormand
@@ -152,7 +196,6 @@ export default function Tirage() {
           </p>
         </div>
 
-        {/* Carte */}
         {!carteRetournee ? (
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <p style={{ color: 'var(--muted)', marginBottom: '1.5rem', fontSize: '14px' }}>
@@ -204,7 +247,6 @@ export default function Tirage() {
           </div>
         )}
 
-        {/* Question */}
         {carteRetournee && !questionEnvoyee && (
           <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
             <h3 style={{ fontFamily: "'Playfair Display',serif", color: 'var(--vd)', marginBottom: '1rem', fontSize: '1.1rem' }}>
@@ -223,12 +265,18 @@ export default function Tirage() {
           </div>
         )}
 
-        {/* Chat après question */}
         {questionEnvoyee && (
           <div className="card" style={{ padding: '1.5rem' }}>
-            <div style={{ marginBottom: '1rem', padding: '10px', background: 'rgba(123,94,167,0.06)', borderRadius: 'var(--r)', fontSize: '13px', color: 'var(--muted)', textAlign: 'center' }}>
-              ⏳ Fiona va interpréter ta carte et te répondre très bientôt…
-            </div>
+            {!bloque && (
+              <div style={{ marginBottom: '1rem', padding: '10px', background: 'rgba(123,94,167,0.06)', borderRadius: 'var(--r)', fontSize: '13px', color: 'var(--muted)', textAlign: 'center' }}>
+                ⏳ Fiona va interpréter ta carte et te répondre très bientôt…
+              </div>
+            )}
+            {bloque && (
+              <div style={{ marginBottom: '1rem', padding: '10px', background: 'rgba(60,160,100,0.08)', borderRadius: 'var(--r)', fontSize: '13px', color: '#1A7040', textAlign: 'center' }}>
+                ✅ Tirage terminé — merci pour ta confiance 🔮
+              </div>
+            )}
             <div style={{ maxHeight: 300, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1rem' }}>
               {messages.map(msg => {
                 const isClient = msg.auteur === 'client';
@@ -241,19 +289,42 @@ export default function Tirage() {
                 );
               })}
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') envoyerMessage(); }}
-                placeholder="Envoyer un message…"
-                style={{ flex: 1, border: '1.5px solid var(--border)', borderRadius: 'var(--r)', padding: '10px 14px', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', outline: 'none', color: 'var(--txt)' }}
-              />
-              <button onClick={envoyerMessage} style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg, var(--v), var(--pd))', color: '#fff', cursor: 'pointer', fontSize: '16px' }}>↑</button>
-            </div>
+            {!bloque && (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') envoyerMessage(); }}
+                  placeholder="Envoyer un message…"
+                  style={{ flex: 1, border: '1.5px solid var(--border)', borderRadius: 'var(--r)', padding: '10px 14px', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', outline: 'none', color: 'var(--txt)' }}
+                />
+                <button onClick={envoyerMessage} style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg, var(--v), var(--pd))', color: '#fff', cursor: 'pointer', fontSize: '16px' }}>↑</button>
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {avisOpen && !avisEnvoye && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(42,26,74,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}>
+          <div className="card" style={{ maxWidth: 380, width: '100%', padding: '2rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⭐</div>
+            <h3 style={{ fontFamily: "'Playfair Display',serif", color: 'var(--vd)', marginBottom: '0.5rem' }}>Comment s'est passé ton tirage ?</h3>
+            <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '1.5rem' }}>Ton avis aide d'autres personnes à me faire confiance ✨</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '1.5rem' }}>
+              {[1,2,3,4,5].map(n => (
+                <span key={n} onClick={() => setAvisNote(n)} style={{ fontSize: '2rem', cursor: 'pointer', opacity: n <= avisNote ? 1 : 0.3, transition: 'opacity 0.15s' }}>⭐</span>
+              ))}
+            </div>
+            <textarea value={avisTexte} onChange={e => setAvisTexte(e.target.value)} placeholder="Dis-moi ce que tu as pensé du tirage..." rows={3}
+              style={{ width: '100%', border: '1.5px solid var(--border)', borderRadius: 'var(--r)', padding: '10px 14px', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', resize: 'none', outline: 'none', color: 'var(--txt)', marginBottom: '1rem', boxSizing: 'border-box' }} />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setAvisOpen(false)} className="btn btn-outline" style={{ flex: 1 }}>Plus tard</button>
+              <button onClick={envoyerAvis} className="btn btn-primary" style={{ flex: 2 }}>Envoyer mon avis ✦</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
