@@ -10,6 +10,92 @@ import { useAuth } from '../components/AuthContext';
 import Stars from '../components/Stars';
 import { getTarifActuel } from '../lib/stripe';
 
+function Morpion() {
+  const [board, setBoard] = useState(Array(9).fill(null));
+  const [xIsNext, setXIsNext] = useState(true);
+  const [winner, setWinner] = useState(null);
+  const [scores, setScores] = useState({ X: 0, O: 0 });
+
+  const checkWinner = (b) => {
+    const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    for (const [a,b1,c] of lines) {
+      if (b[a] && b[a] === b[b1] && b[a] === b[c]) return b[a];
+    }
+    return b.every(Boolean) ? 'draw' : null;
+  };
+
+  const handleClick = (i) => {
+    if (board[i] || winner) return;
+    const newBoard = [...board];
+    newBoard[i] = xIsNext ? '✦' : '🔮';
+    const w = checkWinner(newBoard);
+    setBoard(newBoard);
+    setXIsNext(!xIsNext);
+    if (w) {
+      setWinner(w);
+      if (w !== 'draw') setScores(s => ({ ...s, [w === '✦' ? 'X' : 'O']: s[w === '✦' ? 'X' : 'O'] + 1 }));
+    }
+  };
+
+  const reset = () => {
+    setBoard(Array(9).fill(null));
+    setWinner(null);
+    setXIsNext(true);
+  };
+
+  const status = winner
+    ? winner === 'draw' ? '🤝 Égalité !' : `🎉 ${winner} a gagné !`
+    : `Tour de : ${xIsNext ? '✦ Toi' : '🔮 Fiona'}`;
+
+  return (
+    <div style={{ marginTop: '1.5rem', padding: '1.5rem', borderRadius: 'var(--r)', background: 'rgba(123,94,167,0.06)', border: '1px solid var(--vl)' }}>
+      <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+        <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--vd)', marginBottom: '8px' }}>
+          🎮 Morpion — Patiente en jouant !
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', fontSize: '12px', color: 'var(--muted)', marginBottom: '8px' }}>
+          <span>✦ Toi : {scores.X}</span>
+          <span>🔮 Fiona : {scores.O}</span>
+        </div>
+        <div style={{ fontSize: '13px', color: winner ? 'var(--v)' : 'var(--muted)', fontWeight: winner ? 600 : 400 }}>
+          {status}
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', maxWidth: 200, margin: '0 auto' }}>
+        {board.map((cell, i) => (
+          <button
+            key={i}
+            onClick={() => handleClick(i)}
+            style={{
+              height: 60, borderRadius: 'var(--r)',
+              border: `1.5px solid ${cell ? 'var(--vl)' : 'var(--border)'}`,
+              background: cell ? 'rgba(123,94,167,0.08)' : 'rgba(255,255,255,0.7)',
+              fontSize: '1.4rem', cursor: board[i] || winner ? 'default' : 'pointer',
+              transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            {cell}
+          </button>
+        ))}
+      </div>
+
+      {winner && (
+        <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+          <button onClick={reset} style={{
+            padding: '8px 20px', borderRadius: '50px',
+            background: 'linear-gradient(135deg, var(--v), var(--pd))',
+            color: '#fff', border: 'none', cursor: 'pointer',
+            fontSize: '13px', fontWeight: 500,
+          }}>
+            Rejouer ✨
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Chat() {
   const { user } = useAuth();
   const router = useRouter();
@@ -361,7 +447,7 @@ export default function Chat() {
       <>
         <Stars />
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}>
-          <div className="card" style={{ maxWidth: 480, width: '100%', padding: '3rem 2rem', textAlign: 'center' }}>
+          <div className="card" style={{ maxWidth: 480, width: '100%', padding: '2rem', textAlign: 'center' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✦</div>
             <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.6rem', color: 'var(--vd)', marginBottom: '1rem' }}>
               Tu es dans la salle d'attente
@@ -373,6 +459,7 @@ export default function Chat() {
             <div style={{ padding: '1rem', borderRadius: 'var(--r)', background: 'rgba(123,94,167,0.08)', border: '1px solid var(--vl)', fontSize: '14px', color: 'var(--vd)' }}>
               ⏳ En attente de confirmation…
             </div>
+            <Morpion />
           </div>
         </div>
       </>
