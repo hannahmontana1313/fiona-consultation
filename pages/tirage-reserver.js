@@ -4,7 +4,7 @@ import { useAuth } from '../components/AuthContext';
 import Stars from '../components/Stars';
 import Navbar from '../components/Navbar';
 import { loadStripe } from '@stripe/stripe-js';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 export default function TirageReserver() {
@@ -16,6 +16,7 @@ export default function TirageReserver() {
   const [error, setError] = useState('');
   const [fidelite, setFidelite] = useState(null);
   const [cadeauUtilise, setCadeauUtilise] = useState(false);
+  const [cadeauAnniversaire, setCadeauAnniversaire] = useState(false);
 
   useEffect(() => {
     if (!user) { router.push('/inscription'); return; }
@@ -35,6 +36,19 @@ export default function TirageReserver() {
     };
     fetchFidelite();
   }, [user]);
+
+  useEffect(() => {
+  if (!user || !router.isReady) return;
+  if (router.query.anniversaire === '1') {
+    // Vérifier que le cadeau n'a pas déjà été utilisé
+    const verifier = async () => {
+      const snap = await getDoc(doc(db, 'cadeauxAnniversaire', user.uid));
+      if (snap.exists() && snap.data().utilise) return;
+      setCadeauAnniversaire(true);
+    };
+    verifier();
+  }
+}, [user, router.isReady]);
 
   // Cadeaux disponibles
   const getCadeauxDisponibles = () => {
@@ -67,16 +81,17 @@ export default function TirageReserver() {
 
   const prixBase = 5;
   const calculerPrixFinal = () => {
-    let p = prixBase;
-    if (cadeauUtilise && cadeauInfo) {
-      if (cadeauInfo.type === 'fixe') p = Math.max(0, p - cadeauInfo.remise);
-      else p = p * (1 - cadeauInfo.remise);
-    } else {
-      const remiseVIP = getRemiseVIP();
-      if (remiseVIP > 0) p = p * (1 - remiseVIP);
-    }
-    return Math.max(0, p);
-  };
+  if (cadeauAnniversaire) return 0;
+  let p = prixBase;
+  if (cadeauUtilise && cadeauInfo) {
+    if (cadeauInfo.type === 'fixe') p = Math.max(0, p - cadeauInfo.remise);
+    else p = p * (1 - cadeauInfo.remise);
+  } else {
+    const remiseVIP = getRemiseVIP();
+    if (remiseVIP > 0) p = p * (1 - remiseVIP);
+  }
+  return Math.max(0, p);
+};
 
   const prix = calculerPrixFinal();
 
@@ -93,23 +108,48 @@ export default function TirageReserver() {
   };
 
   const handlePayer = async () => {
-    if (!prenom.trim()) return setError('Merci d\'indiquer ton prénom.');
-    setLoading(true);
-    setError('');
-    await marquerCadeauUtilise();
-    try {
-      const res = await fetch('/api/create-checkout-tirage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.uid,
-          prenom,
-          telephone,
-          prixFinal: Math.round(prix * 100),
-          cadeauUtilise: cadeauUtilise ? meilleurCadeau : null,
-          statutVIP: fidelite?.statut || 'bronze',
-        }),
-      });
+  if (!prenom.trim()) return setError('Merci d\'indiquer ton prénom.');
+  setLoading(true);
+  setError('');
+
+  // Cadeau anniversaire gratuit
+  if (cadeauAnniversaire) {
+    await updateDoc(doc(db, 'cadeauxAnniversaire', user.uid), { utilise: true });
+    router.push({
+      pathname: '/tirage',
+      query: {
+        userId: user.uid,
+        prenom,
+        telephone,
+        gratuit: 'anniversaire',
+      },
+    });
+    return;
+  }
+
+  await marquerCadeauUtilise();
+  try {
+    const res = await fetch('/api/create-checkout-tirage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.uid,
+        prenom,
+        telephone,
+        prixFinal: Math.round(prix * 100),
+        cadeauUtilise: cadeauUtilise ? meilleurCadeau : null,
+        statutVIP: fidelite?.statut || 'bronze',
+      }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+    await stripe.redirectToCheckout({ sessionId: data.sessionId });
+  } catch (err) {
+    setError('Erreur : ' + err.message);
+    setLoading(false);
+  }
+};
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
@@ -121,25 +161,38 @@ export default function TirageReserver() {
   };
 
   const handleWero = async () => {
-    await marquerCadeauUtilise();
+  if (cadeauAnniversaire) {
+    await updateDoc(doc(db, 'cadeauxAnniversaire', user.uid), { utilise: true });
     router.push({
-      pathname: '/attente-wero',
+      pathname: '/tirage',
       query: {
+        userId: user.uid,
         prenom,
         telephone,
-        domaine: 'Tirage Lenormand',
-        sujet: 'Tirage express',
-        message: '',
-        minutes: '0',
-        montant: String(prix.toFixed(2)),
-        userId: user?.uid,
-        tarif: '0',
-        tirage: 'true',
-        cadeauUtilise: cadeauUtilise ? String(meilleurCadeau) : '',
-        statutVIP: fidelite?.statut || 'bronze',
+        gratuit: 'anniversaire',
       },
     });
-  };
+    return;
+  }
+  await marquerCadeauUtilise();
+  router.push({
+    pathname: '/attente-wero',
+    query: {
+      prenom,
+      telephone,
+      domaine: 'Tirage Lenormand',
+      sujet: 'Tirage express',
+      message: '',
+      minutes: '0',
+      montant: String(prix.toFixed(2)),
+      userId: user?.uid,
+      tarif: '0',
+      tirage: 'true',
+      cadeauUtilise: cadeauUtilise ? String(meilleurCadeau) : '',
+      statutVIP: fidelite?.statut || 'bronze',
+    },
+  });
+};
 
   return (
     <>
@@ -236,7 +289,22 @@ export default function TirageReserver() {
               </div>
             )}
 
-            {error && <p className="form-error" style={{ marginBottom: '1rem' }}>{error}</p>}
+           {cadeauAnniversaire && (
+  <div style={{
+    marginBottom: '1rem', padding: '14px', borderRadius: 'var(--r)',
+    background: 'linear-gradient(135deg, rgba(240,192,64,0.15), rgba(123,94,167,0.15))',
+    border: '2px solid #F0C040', textAlign: 'center',
+  }}>
+    <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>🎂</div>
+    <div style={{ fontWeight: 600, color: 'var(--vd)', fontSize: '14px' }}>
+      Cadeau anniversaire — Tirage Gratuit !
+    </div>
+    <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
+      Valable aujourd'hui uniquement 🎁
+    </div>
+  </div>
+)}
+{error && <p className="form-error" style={{ marginBottom: '1rem' }}>{error}</p>}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button
