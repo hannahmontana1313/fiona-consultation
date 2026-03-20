@@ -38,16 +38,15 @@ export default function TirageReserver() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || !router.isReady) return;
-    if (router.query.anniversaire === '1') {
-      const verifier = async () => {
-        const snap = await getDoc(doc(db, 'cadeauxAnniversaire', user.uid));
-        if (snap.exists() && snap.data().utilise) return;
-        setCadeauAnniversaire(true);
-      };
-      verifier();
-    }
-  }, [user, router.isReady]);
+    if (!user) return;
+    const verifier = async () => {
+      if (router.query.anniversaire !== '1') return;
+      const snap = await getDoc(doc(db, 'cadeauxAnniversaire', user.uid));
+      if (snap.exists() && snap.data().utilise) return;
+      setCadeauAnniversaire(true);
+    };
+    verifier();
+  }, [user, router.query]);
 
   const getCadeauxDisponibles = () => {
     if (!fidelite) return [];
