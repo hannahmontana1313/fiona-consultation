@@ -1,4 +1,3 @@
-import Footer from '../components/Footer';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import Stars from '../components/Stars';
@@ -77,7 +76,6 @@ export default function Home() {
       </div>
 
       <main style={{ paddingBottom: '4rem' }}>
-        {/* Hero */}
         <section style={{
           textAlign: 'center', padding: '5rem 1.25rem 3rem',
           position: 'relative', zIndex: 1,
@@ -117,7 +115,6 @@ export default function Home() {
         </section>
 
         <div className="container">
-          {/* Comment ça fonctionne */}
           <section className="card fade-up" style={{ padding: '2.5rem', marginBottom: '1.5rem' }}>
             <h2 style={{
               fontFamily: "'Playfair Display', serif",
@@ -150,7 +147,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Tarifs */}
           <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
             <div className="card" style={{ padding: '2rem', textAlign: 'center', position: 'relative' }}>
               {!isWeekend && (
@@ -188,7 +184,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Features */}
           <section className="card" style={{ padding: '2rem', marginBottom: '1.5rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
               {[
@@ -208,7 +203,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Tirage express */}
           <section className="card" style={{ padding: '2rem', marginBottom: '1.5rem', background: 'linear-gradient(135deg, rgba(42,26,74,0.05), rgba(123,94,167,0.08))', borderColor: 'var(--vl)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
               <div style={{ fontSize: '3rem' }}>🔮</div>
@@ -229,7 +223,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Important */}
           <div style={{
             padding: '1rem 1.5rem',
             background: 'rgba(255,255,255,0.6)', borderRadius: 'var(--r)',
@@ -240,7 +233,6 @@ export default function Home() {
             ⚠️ Le temps démarre dès l'ouverture du chat · Le chrono ne s'arrête jamais · Aucun remboursement après démarrage
           </div>
 
-          {/* Témoignages */}
           {avis.length > 0 && (
             <section className="card" style={{ padding: '2.5rem', marginTop: '1.5rem' }}>
               <h2 style={{
@@ -274,7 +266,6 @@ export default function Home() {
           )}
         </div>
       </main>
-            <Footer />
     </>
   );
 }
