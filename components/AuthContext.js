@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
     return unsub;
   }, []);
 
-  const inscription = async (email, password, prenom) => {
+  const inscription = async (email, password, prenom, dateNaissance) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName: prenom });
     await setDoc(doc(db, 'users', cred.user.uid), {
@@ -61,6 +61,7 @@ export const AuthProvider = ({ children }) => {
       email,
       prenom,
       role: 'client',
+      dateNaissance: dateNaissance || null,
       createdAt: serverTimestamp(),
       bloque: false,
     });
