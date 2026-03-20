@@ -370,9 +370,12 @@ export default function Chat() {
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✦</div>
             <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.6rem', color: 'var(--vd)', marginBottom: '1rem' }}>Tu es dans la salle d'attente</h1>
             <p style={{ color: 'var(--muted)', lineHeight: 1.7, marginBottom: '1.5rem' }}>
-              Ton paiement a bien été reçu. Je vais démarrer ta consultation très bientôt.
-              Le chronomètre ne démarrera qu'une fois que j'aurai accepté ta demande.
-            </p>
+  Ton paiement a bien été reçu. Je vais démarrer ta consultation très bientôt.
+  Le chronomètre ne démarrera qu'une fois que j'aurai accepté ta demande.
+</p>
+<div style={{ padding: '10px 16px', borderRadius: 'var(--r)', background: 'rgba(240,192,64,0.12)', border: '1px solid #F0C040', fontSize: '13px', color: '#7A4A00', marginBottom: '1rem', lineHeight: 1.6 }}>
+  ⚠️ <strong>Reste sur cette page !</strong> Le chronomètre démarre dès que j'accepte ta demande. Si tu fermes cet onglet tu risques de manquer le début de ta consultation.
+</div>
             <div style={{ padding: '1rem', borderRadius: 'var(--r)', background: 'rgba(123,94,167,0.08)', border: '1px solid var(--vl)', fontSize: '14px', color: 'var(--vd)' }}>
               ⏳ En attente de confirmation…
             </div>
