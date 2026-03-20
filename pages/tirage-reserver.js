@@ -110,11 +110,20 @@ export default function TirageReserver() {
     setError('');
 
     if (cadeauAnniversaire) {
+      if (!prenom.trim()) return setError('Merci d\'indiquer ton prénom.');
       await updateDoc(doc(db, 'cadeauxAnniversaire', user.uid), { utilise: true });
-      router.push({
-        pathname: '/tirage',
-        query: { userId: user.uid, prenom, telephone, gratuit: 'anniversaire' },
+      const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+      const { db: firestoreDb } = await import('../lib/firebase');
+      await addDoc(collection(firestoreDb, 'tirages'), {
+        userId: user.uid,
+        prenom,
+        telephone,
+        statut: 'en_attente',
+        gratuit: 'anniversaire',
+        montant: 0,
+        createdAt: serverTimestamp(),
       });
+      router.push('/tirage?gratuit=anniversaire');
       return;
     }
 
