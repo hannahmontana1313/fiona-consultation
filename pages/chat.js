@@ -494,14 +494,12 @@ function NotifPermission({ consultationId, userId }) {
     try {
       setStatut('loading');
 
-      // Vérifier si les notifications sont supportées
       if (!('Notification' in window)) {
         setErreurMsg('Ton navigateur ne supporte pas les notifications.');
         setStatut('erreur');
         return;
       }
 
-      // Vérifier si le service worker est supporté
       if (!('serviceWorker' in navigator)) {
         setErreurMsg('Service Worker non supporté sur ce navigateur.');
         setStatut('erreur');
@@ -511,18 +509,42 @@ function NotifPermission({ consultationId, userId }) {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') { setStatut('refuse'); return; }
 
-      // Enregistrer le service worker manuellement
       const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
       await navigator.serviceWorker.ready;
 
+      const { initializeApp, getApps } = await import('firebase/app');
       const { getMessaging, getToken } = await import('firebase/messaging');
-      const { getApp } = await import('firebase/app');
-      const messaging = getMessaging(getApp());
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAJYaMUIkIvXOFSUSlUXEgyO7PcplJqBhs",
+        authDomain: "fiona-consultation.firebaseapp.com",
+        projectId: "fiona-consultation",
+        storageBucket: "fiona-consultation.firebasestorage.app",
+        messagingSenderId: "149410595083",
+        appId: "1:149410595083:web:0c25164b06d8745049e20e"
+      };
+
+      const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+      const messaging = getMessaging(app);
 
       const token = await getToken(messaging, {
         vapidKey: 'BETinRhkHulkoTZQ92PFD-7CivmLNoPwlf3q9ryzAMd5YpUvSESSKrvx1qg8scpPL9bCer9XhmJlavOzPBuTmyE',
         serviceWorkerRegistration: registration,
       });
+
+      if (token && consultationId && userId) {
+        await updateDoc(doc(db, 'consultations', consultationId), { fcmToken: token });
+        setStatut('ok');
+      } else {
+        setErreurMsg('Token non reçu. Réessaie.');
+        setStatut('erreur');
+      }
+    } catch (err) {
+      console.error('Notif error:', err);
+      setErreurMsg('Erreur : ' + err.message);
+      setStatut('erreur');
+    }
+  };
 
       if (token && consultationId && userId) {
         await updateDoc(doc(db, 'consultations', consultationId), { fcmToken: token });
