@@ -105,6 +105,7 @@ export default function TirageReserver() {
   };
 
   const handlePayer = async () => {
+    alert('cadeauAnniversaire = ' + cadeauAnniversaire + ' | prenom = ' + prenom);
     if (!prenom.trim()) return setError('Merci d\'indiquer ton prénom.');
     setError('');
 
