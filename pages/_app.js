@@ -91,7 +91,7 @@ export default function App({ Component, pageProps }) {
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('click', handleClick);
+   document.addEventListener('click', handleClick, true);
     window.addEventListener('touchmove', handleTouch, { passive: true });
     window.addEventListener('touchstart', handleTouchStart, { passive: true });
 
@@ -111,7 +111,7 @@ export default function App({ Component, pageProps }) {
     return () => {
       window.removeEventListener('resize', resize);
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('click', handleClick);
+      document.removeEventListener('click', handleClick, true);
       window.removeEventListener('touchmove', handleTouch);
       window.removeEventListener('touchstart', handleTouchStart);
       cancelAnimationFrame(animId);
