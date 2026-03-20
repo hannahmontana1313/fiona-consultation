@@ -164,6 +164,13 @@ export default function Admin() {
       auteur: 'admin', type: 'message', lu: true, createdAt: serverTimestamp(),
     });
 
+    // Envoyer notification push au client
+    fetch('/api/send-notif', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ consultationId: id }),
+    }).catch(() => {});
+
     await fetch('/api/set-statut', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
