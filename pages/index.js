@@ -79,15 +79,21 @@ const [ticketRevele, setTicketRevele] = useState(false);
     );
     if (!estAnniversaire) return;
 
-    // Vérifier si le cadeau a déjà été utilisé aujourd'hui
+    const anneeEnCours = today.getFullYear();
     const cadeauRef = doc(db, 'cadeauxAnniversaire', user.uid);
     const cadeauSnap = await getDoc(cadeauRef);
-    const anneeEnCours = today.getFullYear();
 
-    if (cadeauSnap.exists() && cadeauSnap.data().annee === anneeEnCours) return;
+    // Cadeau déjà utilisé → rien
+    if (cadeauSnap.exists() && cadeauSnap.data().utilise) return;
 
-    // Cadeau disponible !
-    setCadeauAnniversaire({ prenom: data.prenom });
+    // Cadeau scratché mais pas utilisé → montrer le rappel
+    if (cadeauSnap.exists() && cadeauSnap.data().annee === anneeEnCours && !cadeauSnap.data().utilise) {
+      setCadeauAnniversaire({ prenom: data.prenom, dejaScratte: true });
+      return;
+    }
+
+    // Cadeau pas encore scratché
+    setCadeauAnniversaire({ prenom: data.prenom, dejaScratte: false });
   };
   verifierAnniversaire();
 }, [user]);
@@ -182,31 +188,48 @@ const [ticketRevele, setTicketRevele] = useState(false);
       )}
 
       {cadeauAnniversaire && !ticketGratte && (
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(255,192,64,0.2), rgba(123,94,167,0.2))',
-          borderBottom: '2px solid #F0C040',
-          textAlign: 'center', padding: '1.5rem 20px',
-          position: 'relative', overflow: 'hidden',
+  <div style={{
+    background: 'linear-gradient(135deg, rgba(255,192,64,0.2), rgba(123,94,167,0.2))',
+    borderBottom: '2px solid #F0C040',
+    textAlign: 'center', padding: '1.5rem 20px',
+  }}>
+    <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🎂</div>
+    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.4rem', color: 'var(--vd)', marginBottom: '8px' }}>
+      Joyeux anniversaire {cadeauAnniversaire.prenom} ! 🎉
+    </div>
+    {cadeauAnniversaire.dejaScratte ? (
+      <>
+        <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '1rem' }}>
+          Tu as un tirage express gratuit qui t'attend ! Valable aujourd'hui uniquement ✨
+        </p>
+        <Link href="/tirage-reserver?anniversaire=1" style={{
+          display: 'inline-block', padding: '12px 28px', borderRadius: '50px',
+          background: 'linear-gradient(135deg, #F0C040, #E08020)',
+          color: '#fff', fontFamily: "'DM Sans',sans-serif", fontWeight: 700,
+          fontSize: '15px', textDecoration: 'none',
+          boxShadow: '0 4px 20px rgba(240,192,64,0.4)',
         }}>
-          <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🎂</div>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.4rem', color: 'var(--vd)', marginBottom: '8px' }}>
-            Joyeux anniversaire {cadeauAnniversaire.prenom} ! 🎉
-          </div>
-          <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '1rem' }}>
-            J'ai un cadeau spécial pour toi aujourd'hui ✨
-          </p>
-          <button onClick={() => setTicketGratte(true)} style={{
-            padding: '12px 28px', borderRadius: '50px',
-            background: 'linear-gradient(135deg, #F0C040, #E08020)',
-            color: '#fff', border: 'none', cursor: 'pointer',
-            fontFamily: "'DM Sans',sans-serif", fontWeight: 700, fontSize: '15px',
-            boxShadow: '0 4px 20px rgba(240,192,64,0.4)',
-            animation: 'pulse 2s infinite',
-          }}>
-            🎁 Gratter mon ticket cadeau
-          </button>
-        </div>
-      )}
+          🔮 Utiliser mon tirage gratuit
+        </Link>
+      </>
+    ) : (
+      <>
+        <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '1rem' }}>
+          J'ai un cadeau spécial pour toi aujourd'hui ✨
+        </p>
+        <button onClick={() => setTicketGratte(true)} style={{
+          padding: '12px 28px', borderRadius: '50px',
+          background: 'linear-gradient(135deg, #F0C040, #E08020)',
+          color: '#fff', border: 'none', cursor: 'pointer',
+          fontFamily: "'DM Sans',sans-serif", fontWeight: 700, fontSize: '15px',
+          boxShadow: '0 4px 20px rgba(240,192,64,0.4)',
+        }}>
+          🎁 Gratter mon ticket cadeau
+        </button>
+      </>
+    )}
+  </div>
+)}
 
       {ticketGratte && !ticketRevele && (
         <div style={{
