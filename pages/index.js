@@ -13,6 +13,7 @@ export default function Home() {
   const isWeekend = tarif === 5;
   const [avis, setAvis] = useState([]);
   const [fidelite, setFidelite] = useState(null);
+  const [statutFiona, setStatutFiona] = useState('En ligne');
 
   const MESSAGES_DU_JOUR = [
     "✨ Les astres s'alignent aujourd'hui pour révéler ce que ton cœur pressent déjà...",
@@ -50,7 +51,6 @@ export default function Home() {
 
   const messageDuJour = MESSAGES_DU_JOUR[new Date().getDate() % MESSAGES_DU_JOUR.length];
 
-  // Charger les points fidélité si connectée
   useEffect(() => {
     if (!user) return;
     const fetchFidelite = async () => {
@@ -60,7 +60,13 @@ export default function Home() {
     fetchFidelite();
   }, [user]);
 
-  // Calcul du prochain palier
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'config', 'statut'), snap => {
+      if (snap.exists()) setStatutFiona(snap.data().statut || 'En ligne');
+    });
+    return unsub;
+  }, []);
+
   const getProchainPalier = (points) => {
     if (points < 150) return { palier: 150, reste: 150 - points, cadeau: '5€ offerts' };
     if (points < 300) return { palier: 300, reste: 300 - points, cadeau: '-10% + priorité' };
@@ -96,7 +102,25 @@ export default function Home() {
         {messageDuJour}
       </div>
 
-      {/* Bandeau fidélité — visible uniquement si connectée */}
+      {/* Statut Fiona */}
+      <div style={{
+        textAlign: 'center', padding: '8px 20px',
+        background: statutFiona === 'En ligne' ? 'rgba(60,160,100,0.1)' : statutFiona === 'En consultation' ? 'rgba(240,192,64,0.1)' : 'rgba(200,60,80,0.08)',
+        borderBottom: `1px solid ${statutFiona === 'En ligne' ? 'rgba(60,160,100,0.2)' : statutFiona === 'En consultation' ? 'rgba(240,192,64,0.2)' : 'rgba(200,60,80,0.15)'}`,
+        fontSize: '13px',
+        color: statutFiona === 'En ligne' ? '#1A7040' : statutFiona === 'En consultation' ? '#7A4A00' : '#A02040',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+      }}>
+        <span style={{
+          width: 8, height: 8, borderRadius: '50%', display: 'inline-block',
+          background: statutFiona === 'En ligne' ? '#3CA060' : statutFiona === 'En consultation' ? '#F0C040' : '#C0305A',
+        }} />
+        {statutFiona === 'En ligne' && 'Fiona est en ligne — je réponds rapidement ! ✨'}
+        {statutFiona === 'En consultation' && 'Fiona est en consultation — je reviens très bientôt 🔮'}
+        {statutFiona === 'Hors ligne' && 'Fiona est hors ligne — laisse ta demande, je reviens bientôt 🌙'}
+      </div>
+
+      {/* Bandeau fidélité */}
       {user && fidelite && prochainPalier && (
         <div style={{
           background: 'linear-gradient(135deg, rgba(232,160,200,0.15), rgba(123,94,167,0.15))',
@@ -111,7 +135,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Bandeau si tous les paliers atteints */}
       {user && fidelite && !prochainPalier && (
         <div style={{
           background: 'linear-gradient(135deg, rgba(255,215,0,0.15), rgba(123,94,167,0.15))',
