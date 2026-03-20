@@ -1,47 +1,30 @@
-// firebase-messaging-sw.js — Service Worker pour notifications push
-// Placé dans /public/firebase-messaging-sw.js
-
-importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: self.FIREBASE_API_KEY,
-  authDomain: self.FIREBASE_AUTH_DOMAIN,
-  projectId: self.FIREBASE_PROJECT_ID,
-  storageBucket: self.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: self.FIREBASE_MESSAGING_SENDER_ID,
-  appId: self.FIREBASE_APP_ID,
+  apiKey: "AIzaSyAJYaMUIkIvXOFSUSlUXEgyO7PcplJqBhs",
+  authDomain: "fiona-consultation.firebaseapp.com",
+  projectId: "fiona-consultation",
+  storageBucket: "fiona-consultation.firebasestorage.app",
+  messagingSenderId: "149410595083",
+  appId: "1:149410595083:web:0c25164b06d8745049e20e"
 });
-
-// IMPORTANT : remplace les valeurs ci-dessous par tes vraies clés Firebase
-// (le service worker ne peut pas lire process.env)
-// Tu peux aussi utiliser un script de build pour injecter ces valeurs
 
 const messaging = firebase.messaging();
 
-// Notification reçue en background (app fermée ou onglet non actif)
 messaging.onBackgroundMessage((payload) => {
-  const { title, body, icon } = payload.notification;
-
+  const { title, body } = payload.notification;
   self.registration.showNotification(title || 'Fiona ✦', {
     body: body || 'Nouveau message',
-    icon: icon || '/icons/icon-192.png',
-    badge: '/icons/badge-72.png',
+    icon: '/favicon.ico',
     vibrate: [200, 100, 200],
     data: payload.data,
-    actions: [
-      { action: 'ouvrir', title: 'Voir le message' },
-      { action: 'fermer', title: 'Fermer' },
-    ],
   });
 });
 
-// Clic sur la notification
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  if (event.action === 'fermer') return;
-
-  const url = event.notification.data?.url || '/';
+  const url = event.notification.data?.url || '/attente';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
