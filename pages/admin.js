@@ -115,7 +115,7 @@ export default function Admin() {
         }
       }
     });
-  }, [consultations.map(c => c.id + c.statut).join(',')]);
+ }, [consultations.map(c => c.id + '-' + c.statut).join(','), sonActif]);
 
   useEffect(() => {
     const q = query(collection(db, 'consultations'), orderBy('createdAt', 'desc'));
