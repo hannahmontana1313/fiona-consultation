@@ -6,7 +6,7 @@ import {
   onAuthStateChanged,
   updateProfile,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 
 const AuthContext = createContext({});
@@ -20,6 +20,15 @@ export const AuthProvider = ({ children }) => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
+        // Si c'est l'admin, passer en ligne automatiquement
+        const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+        if (firebaseUser.email === adminEmail) {
+          await fetch('/api/set-statut', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ statut: 'En ligne' }),
+          }).catch(() => {});
+        }
         const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
         if (snap.exists()) {
           setUserData(snap.data());
@@ -61,7 +70,17 @@ export const AuthProvider = ({ children }) => {
   const connexion = (email, password) =>
     signInWithEmailAndPassword(auth, email, password);
 
-  const deconnexion = () => signOut(auth);
+  const deconnexion = async () => {
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    if (user?.email === adminEmail) {
+      await fetch('/api/set-statut', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statut: 'Hors ligne' }),
+      }).catch(() => {});
+    }
+    return signOut(auth);
+  };
 
   const isAdmin = userData?.role === 'admin' ||
     user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
