@@ -42,11 +42,14 @@ export default function TirageReserver() {
     const verifier = async () => {
       if (router.query.anniversaire !== '1') return;
       const snap = await getDoc(doc(db, 'cadeauxAnniversaire', user.uid));
-      if (snap.exists() && snap.data().utilise) return;
+      if (snap.exists() && snap.data().utilise) {
+        router.push('/tirage-reserver');
+        return;
+      }
       setCadeauAnniversaire(true);
     };
     verifier();
-  }, [user, router.query]);
+  }, [user?.uid]);
 
   const getCadeauxDisponibles = () => {
     if (!fidelite) return [];
