@@ -530,14 +530,16 @@ function NotifPermission({ consultationId, userId }) {
       const vapidKey = 'BETinRhkHulkoTZQ92PFD-7CivmLNoPwlf3q9ryzAMd5YpUvSESSKrvx1qg8scpPL9bCer9XhmJlavOzPBuTmyE';
 
 const convertVapidKey = (base64String) => {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
+  const base64 = base64String
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+  const raw = atob(base64 + padding);
+  const buffer = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) {
+    buffer[i] = raw.charCodeAt(i);
   }
-  return outputArray;
+  return buffer;
 };
 
 const token = await getToken(messaging, {
