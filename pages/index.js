@@ -158,7 +158,7 @@ export default function Home() {
   <img
     src="/Gemini_Generated_Image_paa407paa407paa4.png"
     alt="Fiona voyante"
-    style={{ width: 220, opacity: 0.9, flexShrink: 0 }}
+    style={{ width: 320, flexShrink: 0, mixBlendMode: 'multiply' }}
   />
   <div style={{ flex: 1, maxWidth: 540 }}>
           <div className="badge badge-purple fade-up" style={{ marginBottom: '1.5rem' }}>
@@ -197,7 +197,7 @@ export default function Home() {
   <img
     src="/Gemini_Generated_Image_paa407paa407paa4.png"
     alt="Fiona voyante"
-    style={{ width: 220, opacity: 0.9, flexShrink: 0, transform: 'scaleX(-1)' }}
+    style={{ width: 320, flexShrink: 0, transform: 'scaleX(-1)', mixBlendMode: 'multiply' }}
   />
 </section>
 
