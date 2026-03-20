@@ -12,9 +12,9 @@ import { getTarifActuel } from '../lib/stripe';
 
 function Morpion() {
   const [board, setBoard] = useState(Array(9).fill(null));
-  const [xIsNext, setXIsNext] = useState(true);
   const [winner, setWinner] = useState(null);
-  const [scores, setScores] = useState({ X: 0, O: 0 });
+  const [scores, setScores] = useState({ joueur: 0, robot: 0 });
+  const [robotTurn, setRobotTurn] = useState(false);
 
   const checkWinner = (b) => {
     const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
@@ -24,72 +24,77 @@ function Morpion() {
     return b.every(Boolean) ? 'draw' : null;
   };
 
+  const meilleurCoup = (b) => {
+    for (let i = 0; i < 9; i++) {
+      if (!b[i]) { const test = [...b]; test[i] = '🔮'; if (checkWinner(test) === '🔮') return i; }
+    }
+    for (let i = 0; i < 9; i++) {
+      if (!b[i]) { const test = [...b]; test[i] = '✦'; if (checkWinner(test) === '✦') return i; }
+    }
+    if (!b[4]) return 4;
+    const coins = [0,2,6,8].filter(i => !b[i]);
+    if (coins.length > 0) return coins[Math.floor(Math.random() * coins.length)];
+    const libres = b.map((v,i) => v ? null : i).filter(i => i !== null);
+    return libres[Math.floor(Math.random() * libres.length)];
+  };
+
   const handleClick = (i) => {
-    if (board[i] || winner) return;
+    if (board[i] || winner || robotTurn) return;
     const newBoard = [...board];
-    newBoard[i] = xIsNext ? '✦' : '🔮';
+    newBoard[i] = '✦';
     const w = checkWinner(newBoard);
     setBoard(newBoard);
-    setXIsNext(!xIsNext);
     if (w) {
       setWinner(w);
-      if (w !== 'draw') setScores(s => ({ ...s, [w === '✦' ? 'X' : 'O']: s[w === '✦' ? 'X' : 'O'] + 1 }));
+      if (w === '✦') setScores(s => ({ ...s, joueur: s.joueur + 1 }));
+      return;
     }
+    setRobotTurn(true);
+    setTimeout(() => {
+      const coup = meilleurCoup(newBoard);
+      if (coup === null || coup === undefined) { setRobotTurn(false); return; }
+      const boardRobot = [...newBoard];
+      boardRobot[coup] = '🔮';
+      const w2 = checkWinner(boardRobot);
+      setBoard(boardRobot);
+      setRobotTurn(false);
+      if (w2) {
+        setWinner(w2);
+        if (w2 === '🔮') setScores(s => ({ ...s, robot: s.robot + 1 }));
+      }
+    }, 500);
   };
 
-  const reset = () => {
-    setBoard(Array(9).fill(null));
-    setWinner(null);
-    setXIsNext(true);
-  };
+  const reset = () => { setBoard(Array(9).fill(null)); setWinner(null); setRobotTurn(false); };
 
   const status = winner
-    ? winner === 'draw' ? '🤝 Égalité !' : `🎉 ${winner} a gagné !`
-    : `Tour de : ${xIsNext ? '✦ Toi' : '🔮 Fiona'}`;
+    ? winner === 'draw' ? '🤝 Égalité !' : winner === '✦' ? '🎉 Tu as gagné !' : '🤖 Le robot a gagné !'
+    : robotTurn ? '🔮 Le robot réfléchit…' : '✦ À ton tour !';
 
   return (
     <div style={{ marginTop: '1.5rem', padding: '1.5rem', borderRadius: 'var(--r)', background: 'rgba(123,94,167,0.06)', border: '1px solid var(--vl)' }}>
       <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-        <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--vd)', marginBottom: '8px' }}>
-          🎮 Morpion — Patiente en jouant !
-        </div>
+        <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--vd)', marginBottom: '8px' }}>🎮 Morpion — Patiente en jouant !</div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', fontSize: '12px', color: 'var(--muted)', marginBottom: '8px' }}>
-          <span>✦ Toi : {scores.X}</span>
-          <span>🔮 Fiona : {scores.O}</span>
+          <span>✦ Toi : {scores.joueur}</span>
+          <span>🔮 Robot : {scores.robot}</span>
         </div>
-        <div style={{ fontSize: '13px', color: winner ? 'var(--v)' : 'var(--muted)', fontWeight: winner ? 600 : 400 }}>
-          {status}
-        </div>
+        <div style={{ fontSize: '13px', color: winner ? 'var(--v)' : 'var(--muted)', fontWeight: winner ? 600 : 400 }}>{status}</div>
       </div>
-
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', maxWidth: 200, margin: '0 auto' }}>
         {board.map((cell, i) => (
-          <button
-            key={i}
-            onClick={() => handleClick(i)}
-            style={{
-              height: 60, borderRadius: 'var(--r)',
-              border: `1.5px solid ${cell ? 'var(--vl)' : 'var(--border)'}`,
-              background: cell ? 'rgba(123,94,167,0.08)' : 'rgba(255,255,255,0.7)',
-              fontSize: '1.4rem', cursor: board[i] || winner ? 'default' : 'pointer',
-              transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            {cell}
-          </button>
+          <button key={i} onClick={() => handleClick(i)} style={{
+            height: 60, borderRadius: 'var(--r)',
+            border: `1.5px solid ${cell ? 'var(--vl)' : 'var(--border)'}`,
+            background: cell ? 'rgba(123,94,167,0.08)' : 'rgba(255,255,255,0.7)',
+            fontSize: '1.4rem', cursor: board[i] || winner || robotTurn ? 'default' : 'pointer',
+            transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>{cell}</button>
         ))}
       </div>
-
       {winner && (
         <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-          <button onClick={reset} style={{
-            padding: '8px 20px', borderRadius: '50px',
-            background: 'linear-gradient(135deg, var(--v), var(--pd))',
-            color: '#fff', border: 'none', cursor: 'pointer',
-            fontSize: '13px', fontWeight: 500,
-          }}>
-            Rejouer ✨
-          </button>
+          <button onClick={reset} style={{ padding: '8px 20px', borderRadius: '50px', background: 'linear-gradient(135deg, var(--v), var(--pd))', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>Rejouer ✨</button>
         </div>
       )}
     </div>
@@ -134,9 +139,7 @@ export default function Chat() {
     if (added && consultationId) {
       const mins = parseInt(added);
       if (!isNaN(mins)) {
-        updateDoc(doc(db, 'consultations', consultationId), {
-          secondesRestantes: increment(mins * 60),
-        });
+        updateDoc(doc(db, 'consultations', consultationId), { secondesRestantes: increment(mins * 60) });
         addSystemMsg(`✨ ${mins} minutes ajoutées !`);
       }
     }
@@ -169,9 +172,7 @@ export default function Chat() {
     const unsub = onSnapshot(q, snap => {
       if (!snap.empty) {
         const nouvelle = snap.docs[0];
-        if (nouvelle.id !== consultationId) {
-          router.push('/chat?consultation=' + nouvelle.id);
-        }
+        if (nouvelle.id !== consultationId) router.push('/chat?consultation=' + nouvelle.id);
       }
     });
     return unsub;
@@ -179,70 +180,41 @@ export default function Chat() {
 
   useEffect(() => {
     if (!consultationId) return;
-    const q = query(
-      collection(db, 'consultations', consultationId, 'messages'),
-      orderBy('createdAt', 'asc')
-    );
+    const q = query(collection(db, 'consultations', consultationId, 'messages'), orderBy('createdAt', 'asc'));
     const unsub = onSnapshot(q, snap => {
       const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setMessages(msgs);
       if (msgs.length === 0) {
-        setTimeout(() => sendSystemMsg(
-          'Coucou et bienvenue ✨ Prends quelques instants pour m\'expliquer ta situation calmement. Ensuite, pose-moi tes questions une par une pour que je puisse te répondre de la façon la plus claire possible. Le temps de consultation est en cours et le compteur s\'affiche en haut du chat.',
-          'admin'
-        ), 500);
+        setTimeout(() => sendSystemMsg('Coucou et bienvenue ✨ Prends quelques instants pour m\'expliquer ta situation calmement. Ensuite, pose-moi tes questions une par une pour que je puisse te répondre de la façon la plus claire possible. Le temps de consultation est en cours et le compteur s\'affiche en haut du chat.', 'admin'), 500);
       }
     });
     return unsub;
   }, [consultationId]);
 
   useEffect(() => {
-    if (msgsRef.current) {
-      msgsRef.current.scrollTop = msgsRef.current.scrollHeight;
-    }
+    if (msgsRef.current) msgsRef.current.scrollTop = msgsRef.current.scrollHeight;
   }, [messages]);
 
   useEffect(() => {
     if (secondesRestantes === null || bloque || consultation?.statut !== 'active') return;
-
     timerRef.current = setInterval(() => {
       setSecrestantes(prev => {
         const next = prev - 1;
-
-        if (next === 300 && !alertes.has(300)) {
-          addSystemMsg('⏰ Il te reste 5 minutes');
-          setAlertes(a => new Set([...a, 300]));
-        }
-        if (next === 120 && !alertes.has(120)) {
-          addSystemMsg('⚠️ Attention, plus que 2 minutes !');
-          setAlertes(a => new Set([...a, 120]));
-        }
-        if (next === 30 && !alertes.has(30)) {
-          addSystemMsg('🔴 Moins de 30 secondes !');
-          setAlertes(a => new Set([...a, 30]));
-        }
+        if (next === 300 && !alertes.has(300)) { addSystemMsg('⏰ Il te reste 5 minutes'); setAlertes(a => new Set([...a, 300])); }
+        if (next === 120 && !alertes.has(120)) { addSystemMsg('⚠️ Attention, plus que 2 minutes !'); setAlertes(a => new Set([...a, 120])); }
+        if (next === 30 && !alertes.has(30)) { addSystemMsg('🔴 Moins de 30 secondes !'); setAlertes(a => new Set([...a, 30])); }
         if (next <= 0) {
           clearInterval(timerRef.current);
           setBloque(true);
           addSystemMsg('⏳ Ton temps de consultation est terminé. Tu peux ajouter du temps pour continuer l\'échange sans perdre le fil.');
-          updateDoc(doc(db, 'consultations', consultationId), {
-            secondesRestantes: 0,
-            statut: 'terminee',
-          });
+          updateDoc(doc(db, 'consultations', consultationId), { secondesRestantes: 0, statut: 'terminee' });
           ajouterPointsBonus30min();
           return 0;
         }
-
-        if (next % 30 === 0) {
-          updateDoc(doc(db, 'consultations', consultationId), {
-            secondesRestantes: next,
-          }).catch(() => {});
-        }
-
+        if (next % 30 === 0) updateDoc(doc(db, 'consultations', consultationId), { secondesRestantes: next }).catch(() => {});
         return next;
       });
     }, 1000);
-
     return () => clearInterval(timerRef.current);
   }, [secondesRestantes !== null, bloque, consultation?.statut]);
 
@@ -256,10 +228,7 @@ export default function Chat() {
   const sendSystemMsg = async (text, auteur = 'system') => {
     if (!consultationId) return;
     await addDoc(collection(db, 'consultations', consultationId, 'messages'), {
-      texte: text,
-      auteur,
-      type: auteur === 'system' ? 'alerte' : 'message',
-      createdAt: serverTimestamp(),
+      texte: text, auteur, type: auteur === 'system' ? 'alerte' : 'message', createdAt: serverTimestamp(),
     });
   };
 
@@ -270,17 +239,10 @@ export default function Chat() {
     const texte = input.trim();
     setInput('');
     await addDoc(collection(db, 'consultations', consultationId, 'messages'), {
-      texte,
-      auteur: 'client',
-      type: 'message',
-      userId: user.uid,
-      lu: false,
-      createdAt: serverTimestamp(),
+      texte, auteur: 'client', type: 'message', userId: user.uid, lu: false, createdAt: serverTimestamp(),
     });
     await updateDoc(doc(db, 'consultations', consultationId), {
-      lastMessage: texte,
-      lastMessageAt: serverTimestamp(),
-      messagesNonLus: increment(1),
+      lastMessage: texte, lastMessageAt: serverTimestamp(), messagesNonLus: increment(1),
     });
   };
 
@@ -290,18 +252,11 @@ export default function Chat() {
       const res = await fetch('/api/ajouter-temps', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          consultationId,
-          minutes: ajoutMinutes,
-          tarif,
-          userId: user.uid,
-        }),
+        body: JSON.stringify({ consultationId, minutes: ajoutMinutes, tarif, userId: user.uid }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-    } catch (err) {
-      alert('Erreur : ' + err.message);
-    }
+    } catch (err) { alert('Erreur : ' + err.message); }
     setLoadingAjout(false);
   };
 
@@ -316,32 +271,19 @@ export default function Chat() {
           const paliers = [150, 300, 600];
           const cadeauxDebloques = [...(data.cadeauxDebloques || [])];
           paliers.forEach(palier => {
-            if ((data.points || 0) < palier && nouveauxPoints >= palier && !cadeauxDebloques.includes(palier)) {
-              cadeauxDebloques.push(palier);
-            }
+            if ((data.points || 0) < palier && nouveauxPoints >= palier && !cadeauxDebloques.includes(palier)) cadeauxDebloques.push(palier);
           });
-          await updateDoc(fideliteRef, {
-            points: nouveauxPoints,
-            cadeauxDebloques,
-            updatedAt: serverTimestamp(),
-          });
+          await updateDoc(fideliteRef, { points: nouveauxPoints, cadeauxDebloques, updatedAt: serverTimestamp() });
         }
       }
-    } catch (err) {
-      console.error('Fidelite bonus 30min error:', err);
-    }
+    } catch (err) { console.error('Fidelite bonus 30min error:', err); }
   };
 
   const envoyerAvis = async () => {
     if (!avisTexte.trim() || !consultationId) return;
     await addDoc(collection(db, 'avis'), {
-      consultationId,
-      userId: user.uid,
-      prenom: consultation.prenom,
-      note: avisNote,
-      texte: avisTexte,
-      visible: false,
-      createdAt: serverTimestamp(),
+      consultationId, userId: user.uid, prenom: consultation.prenom,
+      note: avisNote, texte: avisTexte, visible: false, createdAt: serverTimestamp(),
     });
     try {
       const fideliteRef = doc(db, 'fidelite', user.uid);
@@ -352,37 +294,23 @@ export default function Chat() {
         const paliers = [150, 300, 600];
         const cadeauxDebloques = [...(data.cadeauxDebloques || [])];
         paliers.forEach(palier => {
-          if ((data.points || 0) < palier && nouveauxPoints >= palier && !cadeauxDebloques.includes(palier)) {
-            cadeauxDebloques.push(palier);
-          }
+          if ((data.points || 0) < palier && nouveauxPoints >= palier && !cadeauxDebloques.includes(palier)) cadeauxDebloques.push(palier);
         });
-        await updateDoc(fideliteRef, {
-          points: nouveauxPoints,
-          cadeauxDebloques,
-          updatedAt: serverTimestamp(),
-        });
+        await updateDoc(fideliteRef, { points: nouveauxPoints, cadeauxDebloques, updatedAt: serverTimestamp() });
       }
-    } catch (err) {
-      console.error('Fidelite avis error:', err);
-    }
+    } catch (err) { console.error('Fidelite avis error:', err); }
     setAvisEnvoye(true);
     setAvisOpen(false);
   };
 
-  const timerPct = consultation
-    ? Math.max(0, (secondesRestantes / (consultation.minutes * 60)) * 100)
-    : 100;
-
-  const timerColor = secondesRestantes < 60 ? '#E24B4A'
-    : secondesRestantes < 120 ? '#EF9F27' : '#fff';
+  const timerPct = consultation ? Math.max(0, (secondesRestantes / (consultation.minutes * 60)) * 100) : 100;
+  const timerColor = secondesRestantes < 60 ? '#E24B4A' : secondesRestantes < 120 ? '#EF9F27' : '#fff';
 
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
         <Stars />
-        <div style={{ textAlign: 'center', color: 'var(--vd)', fontFamily: "'Playfair Display',serif", fontSize: '1.2rem' }}>
-          Chargement de ta consultation…
-        </div>
+        <div style={{ textAlign: 'center', color: 'var(--vd)', fontFamily: "'Playfair Display',serif", fontSize: '1.2rem' }}>Chargement de ta consultation…</div>
       </div>
     );
   }
@@ -411,24 +339,15 @@ export default function Chat() {
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(42,26,74,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}>
               <div className="card" style={{ maxWidth: 380, width: '100%', padding: '2rem', textAlign: 'center' }}>
                 <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⭐</div>
-                <h3 style={{ fontFamily: "'Playfair Display',serif", color: 'var(--vd)', marginBottom: '0.5rem' }}>
-                  Comment s'est passée ta consultation ?
-                </h3>
-                <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '1.5rem' }}>
-                  Ton avis aide d'autres personnes à me faire confiance ✨
-                </p>
+                <h3 style={{ fontFamily: "'Playfair Display',serif", color: 'var(--vd)', marginBottom: '0.5rem' }}>Comment s'est passée ta consultation ?</h3>
+                <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '1.5rem' }}>Ton avis aide d'autres personnes à me faire confiance ✨</p>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '1.5rem' }}>
                   {[1,2,3,4,5].map(n => (
                     <span key={n} onClick={() => setAvisNote(n)} style={{ fontSize: '2rem', cursor: 'pointer', opacity: n <= avisNote ? 1 : 0.3, transition: 'opacity 0.15s' }}>⭐</span>
                   ))}
                 </div>
-                <textarea
-                  value={avisTexte}
-                  onChange={e => setAvisTexte(e.target.value)}
-                  placeholder="Dis-moi ce que tu as pensé de la consultation..."
-                  rows={3}
-                  style={{ width: '100%', border: '1.5px solid var(--border)', borderRadius: 'var(--r)', padding: '10px 14px', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', resize: 'none', outline: 'none', color: 'var(--txt)', marginBottom: '1rem', boxSizing: 'border-box' }}
-                />
+                <textarea value={avisTexte} onChange={e => setAvisTexte(e.target.value)} placeholder="Dis-moi ce que tu as pensé de la consultation..." rows={3}
+                  style={{ width: '100%', border: '1.5px solid var(--border)', borderRadius: 'var(--r)', padding: '10px 14px', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', resize: 'none', outline: 'none', color: 'var(--txt)', marginBottom: '1rem', boxSizing: 'border-box' }} />
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={() => setAvisOpen(false)} className="btn btn-outline" style={{ flex: 1 }}>Plus tard</button>
                   <button onClick={envoyerAvis} className="btn btn-primary" style={{ flex: 2 }}>Envoyer mon avis ✦</button>
@@ -449,9 +368,7 @@ export default function Chat() {
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}>
           <div className="card" style={{ maxWidth: 480, width: '100%', padding: '2rem', textAlign: 'center' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✦</div>
-            <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.6rem', color: 'var(--vd)', marginBottom: '1rem' }}>
-              Tu es dans la salle d'attente
-            </h1>
+            <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: '1.6rem', color: 'var(--vd)', marginBottom: '1rem' }}>Tu es dans la salle d'attente</h1>
             <p style={{ color: 'var(--muted)', lineHeight: 1.7, marginBottom: '1.5rem' }}>
               Ton paiement a bien été reçu. Je vais démarrer ta consultation très bientôt.
               Le chronomètre ne démarrera qu'une fois que j'aurai accepté ta demande.
@@ -470,7 +387,6 @@ export default function Chat() {
     <>
       <Stars />
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', maxWidth: 700, margin: '0 auto', padding: '0.75rem', gap: '0.75rem' }}>
-
         <div style={{ background: 'linear-gradient(135deg, var(--v), var(--pd))', borderRadius: 'var(--r2)', padding: '1rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 8px 32px rgba(123,94,167,0.35)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', border: '2px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Playfair Display',serif", color: '#fff', fontWeight: 500, fontSize: '1.1rem' }}>F</div>
@@ -502,9 +418,7 @@ export default function Chat() {
 
         <div ref={msgsRef} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', padding: '4px 0' }}>
           {messages.map(msg => {
-            if (msg.type === 'alerte') return (
-              <div key={msg.id} className="alert-msg" style={{ alignSelf: 'center' }}>{msg.texte}</div>
-            );
+            if (msg.type === 'alerte') return <div key={msg.id} className="alert-msg" style={{ alignSelf: 'center' }}>{msg.texte}</div>;
             const isClient = msg.auteur === 'client';
             return (
               <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignSelf: isClient ? 'flex-end' : 'flex-start', alignItems: isClient ? 'flex-end' : 'flex-start', maxWidth: '75%' }}>
@@ -529,16 +443,12 @@ export default function Chat() {
         )}
 
         <div style={{ background: 'rgba(255,255,255,0.9)', borderRadius: 'var(--r2)', border: '1px solid var(--border)', padding: '10px 12px', display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
+          <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyerMessage(); } }}
             placeholder={bloque ? 'Ton temps est écoulé. Ajoute du temps pour continuer.' : 'Écris ton message… (Entrée pour envoyer)'}
             disabled={bloque}
             style={{ flex: 1, border: 'none', outline: 'none', resize: 'none', fontFamily: "'DM Sans',sans-serif", fontSize: '14px', lineHeight: 1.5, background: 'transparent', color: 'var(--txt)', maxHeight: 120, opacity: bloque ? 0.5 : 1 }}
-            rows={1}
-          />
+            rows={1} />
           <button onClick={envoyerMessage} disabled={bloque || !input.trim()} style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: bloque || !input.trim() ? 'rgba(123,94,167,0.2)' : 'linear-gradient(135deg, var(--v), var(--pd))', color: '#fff', cursor: bloque ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0, boxShadow: bloque ? 'none' : '0 4px 12px rgba(123,94,167,0.35)', transition: 'all 0.2s' }}>↑</button>
         </div>
       </div>
