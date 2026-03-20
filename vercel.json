@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/reset-points",
+      "schedule": "0 0 1 * *"
+    }
+  ]
+}
