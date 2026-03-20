@@ -9,7 +9,7 @@ import { useAuth } from '../components/AuthContext';
 export default function AttenteWero() {
   const router = useRouter();
   const { user } = useAuth();
-  const { prenom, domaine, sujet, message, minutes, montant, userId, tarif, telephone, tirage } = router.query;
+  const { prenom, domaine, sujet, message, minutes, montant, userId, tarif, telephone, tirage, cadeauUtilise, statutVIP } = router.query;
   const [enregistre, setEnregistre] = useState(false);
   const [tirageId, setTirageId] = useState(null);
 
@@ -17,32 +17,21 @@ export default function AttenteWero() {
     if (!router.isReady || !user || enregistre) return;
     const id = `wero_${user.uid}_${Date.now()}`;
     if (tirage === 'true') {
-  setDoc(doc(db, 'tirages', id), {
-    sessionId: id,
-    userId: user.uid,
-    prenom,
-    telephone: telephone || '',
-    statut: 'en_attente',
-    paiement: 'wero',
-    createdAt: serverTimestamp(),
-    messagesNonLus: 0,
-  }).then(() => {
-    setEnregistre(true);
-    setTirageId(id);
-  });
-  setDoc(doc(db, 'tirages', id), {
-    sessionId: id,
-    userId: user.uid,
-    prenom,
-    telephone: telephone || '',
-    statut: 'en_attente',
-    paiement: 'wero',
-    createdAt: serverTimestamp(),
-    messagesNonLus: 0,
-  }).then(() => {
-    setEnregistre(true);
-    setTirageId(id);
-  });
+      setDoc(doc(db, 'tirages', id), {
+        sessionId: id,
+        userId: user.uid,
+        prenom,
+        telephone: telephone || '',
+        statut: 'en_attente',
+        paiement: 'wero',
+        createdAt: serverTimestamp(),
+        messagesNonLus: 0,
+        cadeauUtilise: cadeauUtilise || null,
+        statutVIP: statutVIP || 'bronze',
+      }).then(() => {
+        setEnregistre(true);
+        setTirageId(id);
+      });
     } else {
       if (!minutes) return;
       setDoc(doc(db, 'consultations', id), {
@@ -58,6 +47,8 @@ export default function AttenteWero() {
         telephone: telephone || '',
         messagesNonLus: 0,
         lastMessage: `Paiement Wero en attente de confirmation`,
+        cadeauUtilise: cadeauUtilise || null,
+        statutVIP: statutVIP || 'bronze',
       });
       setEnregistre(true);
     }
@@ -146,14 +137,14 @@ export default function AttenteWero() {
               ⚠️ {tirage === 'true' ? 'Tu seras redirigée vers le tirage automatiquement.' : 'Ton accès au chat sera activé manuellement dès réception du paiement. Cela prend généralement 2 à 5 minutes.'}
             </div>
             <button onClick={() => {
-  if (tirage === 'true' && tirageId) {
-    router.push('/tirage?tirage_id=' + tirageId);
-  } else {
-    router.push('/historique');
-  }
-}} className="btn btn-primary btn-full">
-  ✓ J'ai effectué le paiement
-</button>
+              if (tirage === 'true' && tirageId) {
+                router.push('/tirage?tirage_id=' + tirageId);
+              } else {
+                router.push('/historique');
+              }
+            }} className="btn btn-primary btn-full">
+              ✓ J'ai effectué le paiement
+            </button>
           </div>
         </div>
       </div>
