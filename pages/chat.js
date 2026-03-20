@@ -532,19 +532,6 @@ function NotifPermission({ consultationId, userId }) {
         serviceWorkerRegistration: registration,
       });
 
-      if (token && consultationId && userId) {
-        await updateDoc(doc(db, 'consultations', consultationId), { fcmToken: token });
-        setStatut('ok');
-      } else {
-        setErreurMsg('Token non reçu. Réessaie.');
-        setStatut('erreur');
-      }
-    } catch (err) {
-      console.error('Notif error:', err);
-      setErreurMsg('Erreur : ' + err.message);
-      setStatut('erreur');
-    }
-  };
 
       if (token && consultationId && userId) {
         await updateDoc(doc(db, 'consultations', consultationId), { fcmToken: token });
