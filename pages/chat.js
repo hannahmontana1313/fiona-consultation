@@ -241,6 +241,31 @@ useEffect(() => {
     visible: false,
     createdAt: serverTimestamp(),
   });
+
+  // +5 points fidélité pour l'avis
+  try {
+    const fideliteRef = doc(db, 'fidelite', user.uid);
+    const fideliteSnap = await getDoc(fideliteRef);
+    if (fideliteSnap.exists()) {
+      const data = fideliteSnap.data();
+      const nouveauxPoints = (data.points || 0) + 5;
+      const paliers = [150, 300, 600];
+      const cadeauxDebloques = [...(data.cadeauxDebloques || [])];
+      paliers.forEach(palier => {
+        if ((data.points || 0) < palier && nouveauxPoints >= palier && !cadeauxDebloques.includes(palier)) {
+          cadeauxDebloques.push(palier);
+        }
+      });
+      await updateDoc(fideliteRef, {
+        points: nouveauxPoints,
+        cadeauxDebloques,
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (err) {
+    console.error('Fidelite avis error:', err);
+  }
+
   setAvisEnvoye(true);
   setAvisOpen(false);
 };
