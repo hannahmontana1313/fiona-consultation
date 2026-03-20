@@ -527,10 +527,23 @@ function NotifPermission({ consultationId, userId }) {
       const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
       const messaging = getMessaging(app);
 
-      const token = await getToken(messaging, {
-        vapidKey: 'BETinRhkHulkoTZQ92PFD-7CivmLNoPwlf3q9ryzAMd5YpUvSESSKrvx1qg8scpPL9bCer9XhmJlavOzPBuTmyE',
-        serviceWorkerRegistration: registration,
-      });
+      const vapidKey = 'BETinRhkHulkoTZQ92PFD-7CivmLNoPwlf3q9ryzAMd5YpUvSESSKrvx1qg8scpPL9bCer9XhmJlavOzPBuTmyE';
+
+const convertVapidKey = (base64String) => {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+};
+
+const token = await getToken(messaging, {
+  vapidKey: convertVapidKey(vapidKey),
+  serviceWorkerRegistration: registration,
+});
 
 
       if (token && consultationId && userId) {
