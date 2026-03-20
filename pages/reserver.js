@@ -5,6 +5,8 @@ import Stars from '../components/Stars';
 import Navbar from '../components/Navbar';
 import { getTarifActuel, calculerPrix } from '../lib/stripe';
 import { loadStripe } from '@stripe/stripe-js';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 const DUREES = [
   { minutes: 5, label: '5 min' },
@@ -36,6 +38,8 @@ export default function Reserver() {
   const [loading, setLoading] = useState(false);
   const { ancien } = router.query;
   const [error, setError] = useState('');
+  const [fidelite, setFidelite] = useState(null);
+  const [cadeauUtilise, setCadeauUtilise] = useState(false);
 
   useEffect(() => {
     if (!user) { router.push('/inscription'); return; }
@@ -50,29 +54,90 @@ export default function Reserver() {
     }));
   }, [userData]);
 
+  useEffect(() => {
+    if (!user) return;
+    const fetchFidelite = async () => {
+      const snap = await getDoc(doc(db, 'fidelite', user.uid));
+      if (snap.exists()) setFidelite(snap.data());
+    };
+    fetchFidelite();
+  }, [user]);
 
   const handleField = (name, val) => setForm(f => ({ ...f, [name]: val }));
 
   const dureeChoisie = DUREES[dureeIdx];
-  const prixStripe = calculerPrix(dureeChoisie.minutes, true);
-  const prixWero = calculerPrix(dureeChoisie.minutes, false);
- const prix = (paiement === 'stripe' ? prixStripe : prixWero) + (prioritaire ? 7 : 0);
+  const prixBase = (paiement === 'stripe' ? calculerPrix(dureeChoisie.minutes, true) : calculerPrix(dureeChoisie.minutes, false)) + (prioritaire ? 7 : 0);
+
+  // Calcul remise selon statut VIP
+  const getRemiseVIP = () => {
+    if (!fidelite) return 0;
+    if (fidelite.statut === 'silver') return 0.05;
+    if (fidelite.statut === 'gold') return 0.10;
+    if (fidelite.statut === 'vip') return 0.15;
+    return 0;
+  };
+
+  // Cadeaux disponibles
+  const getCadeauxDisponibles = () => {
+    if (!fidelite) return [];
+    const debloques = fidelite.cadeauxDebloques || [];
+    const utilises = fidelite.cadeauxUtilises || [];
+    return debloques.filter(p => !utilises.includes(p));
+  };
+
+  const cadeauxDisponibles = getCadeauxDisponibles();
+  const meilleurCadeau = cadeauxDisponibles.length > 0 ? Math.max(...cadeauxDisponibles) : null;
+
+  const getCadeauLabel = (palier) => {
+    if (palier === 150) return { label: '5€ offerts', remise: 5, type: 'fixe' };
+    if (palier === 300) return { label: '-10% + priorité', remise: 0.10, type: 'pct' };
+    if (palier === 600) return { label: '-15% + accès VIP', remise: 0.15, type: 'pct' };
+    return null;
+  };
+
+  const cadeauInfo = meilleurCadeau ? getCadeauLabel(meilleurCadeau) : null;
+
+  // Calcul prix final
+  const calculerPrixFinal = () => {
+    let p = prixBase;
+    if (cadeauUtilise && cadeauInfo) {
+      if (cadeauInfo.type === 'fixe') p = Math.max(0, p - cadeauInfo.remise);
+      else p = p * (1 - cadeauInfo.remise);
+    } else {
+      const remiseVIP = getRemiseVIP();
+      if (remiseVIP > 0) p = p * (1 - remiseVIP);
+    }
+    return Math.max(0, p);
+  };
+
+  const prix = calculerPrixFinal();
 
   const handlePayer = async () => {
     if (!form.sujet.trim()) return setError('Merci d\'indiquer ton sujet.');
     setLoading(true);
     setError('');
-// Sauvegarder le téléphone dans le profil utilisateur
+
     if (form.telephone && user) {
-      const { doc, updateDoc } = await import('firebase/firestore');
-      const { db } = await import('../lib/firebase');
-      await updateDoc(doc(db, 'users', user.uid), {
+      const { doc: firestoreDoc, updateDoc } = await import('firebase/firestore');
+      const { db: firestoreDb } = await import('../lib/firebase');
+      await updateDoc(firestoreDoc(firestoreDb, 'users', user.uid), {
         telephone: form.telephone,
         prenom: form.prenom,
       }).catch(() => {});
     }
+
+    // Marquer le cadeau comme utilisé si activé
+    if (cadeauUtilise && meilleurCadeau) {
+      const { doc: firestoreDoc, updateDoc, arrayUnion } = await import('firebase/firestore');
+      const { db: firestoreDb } = await import('../lib/firebase');
+      await updateDoc(firestoreDoc(firestoreDb, 'fidelite', user.uid), {
+        cadeauxUtilises: arrayUnion(meilleurCadeau),
+        dernierCadeauUtilise: meilleurCadeau,
+        dernierCadeauUtiliseAt: new Date(),
+      }).catch(() => {});
+    }
+
     if (paiement === 'wero') {
-      // Wero : redirection avec instructions
       router.push({
         pathname: '/attente-wero',
         query: {
@@ -82,15 +147,16 @@ export default function Reserver() {
           sujet: form.sujet,
           message: form.message,
           minutes: String(dureeChoisie.minutes),
-          montant: String(prixWero),
+          montant: String(prix.toFixed(2)),
           userId: user.uid,
           tarif: String(tarif),
+          cadeauUtilise: cadeauUtilise ? String(meilleurCadeau) : '',
+          statutVIP: fidelite?.statut || 'bronze',
         },
       });
       return;
     }
 
-    // Stripe Checkout
     try {
       const res = await fetch('/api/create-checkout', {
         method: 'POST',
@@ -104,11 +170,13 @@ export default function Reserver() {
           domaine: form.domaine,
           sujet: form.sujet,
           message: form.message,
+          prixFinal: Math.round(prix * 100),
+          cadeauUtilise: cadeauUtilise ? meilleurCadeau : null,
+          statutVIP: fidelite?.statut || 'bronze',
         }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-
       const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
       await stripe.redirectToCheckout({ sessionId: data.sessionId });
     } catch (err) {
@@ -137,7 +205,6 @@ export default function Reserver() {
           </div>
 
           <div style={{ padding: '2rem' }}>
-            {/* Tarif affiché */}
             <div style={{
               padding: '10px 14px', borderRadius: 'var(--r)',
               background: isWeekend ? 'rgba(232,160,200,0.15)' : 'rgba(123,94,167,0.08)',
@@ -159,6 +226,7 @@ export default function Reserver() {
                 onChange={e => handleField('telephone', e.target.value)}
                 placeholder="06, 07 ou numéro international..." required />
             </div>
+
             <div className="form-group">
               <label className="form-label">Domaine de ta consultation</label>
               <select className="input" name="domaine" value={form.domaine}
@@ -185,9 +253,7 @@ export default function Reserver() {
             {/* Durée */}
             <div className="form-group">
               <label className="form-label">Durée souhaitée</label>
-              <div style={{
-                display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '6px',
-              }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '6px' }}>
                 {DUREES.map((d, i) => {
                   const p = calculerPrix(d.minutes, paiement === 'stripe');
                   const sel = i === dureeIdx;
@@ -252,6 +318,39 @@ export default function Reserver() {
               <div style={{ marginLeft: 'auto', width: 20, height: 20, borderRadius: '50%', border: `2px solid ${prioritaire ? '#F0C040' : 'var(--border)'}`, background: prioritaire ? '#F0C040' : 'transparent', flexShrink: 0 }} />
             </div>
 
+            {/* Cadeau fidélité */}
+            {cadeauInfo && (
+              <div onClick={() => setCadeauUtilise(c => !c)} style={{
+                marginTop: '1rem', padding: '14px', borderRadius: 'var(--r)',
+                border: `1.5px solid ${cadeauUtilise ? 'var(--vl)' : 'var(--border)'}`,
+                background: cadeauUtilise ? 'rgba(123,94,167,0.08)' : 'rgba(255,255,255,0.7)',
+                cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'center',
+                transition: 'all 0.18s',
+              }}>
+                <span style={{ fontSize: '1.5rem' }}>🎁</span>
+                <div>
+                  <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--vd)' }}>
+                    Utiliser mon cadeau — {cadeauInfo.label}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px' }}>
+                    Cadeau de fidélité disponible · Utilisable 1 fois
+                  </div>
+                </div>
+                <div style={{ marginLeft: 'auto', width: 20, height: 20, borderRadius: '50%', border: `2px solid ${cadeauUtilise ? 'var(--v)' : 'var(--border)'}`, background: cadeauUtilise ? 'var(--v)' : 'transparent', flexShrink: 0 }} />
+              </div>
+            )}
+
+            {/* Remise VIP automatique */}
+            {!cadeauUtilise && getRemiseVIP() > 0 && (
+              <div style={{
+                marginTop: '1rem', padding: '10px 14px', borderRadius: 'var(--r)',
+                background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)',
+                fontSize: '13px', color: 'var(--vd)',
+              }}>
+                👑 Remise {fidelite?.statut?.toUpperCase()} appliquée : -{Math.round(getRemiseVIP() * 100)}%
+              </div>
+            )}
+
             {error && <p className="form-error" style={{ marginBottom: '1rem' }}>{error}</p>}
           </div>
 
@@ -263,10 +362,12 @@ export default function Reserver() {
           }}>
             <div>
               <div style={{ fontSize: '12px', color: 'var(--muted)' }}>Total à payer</div>
-              <div style={{
-                fontFamily: "'Playfair Display', serif",
-                fontSize: '1.8rem', color: 'var(--vd)',
-              }}>
+              {(cadeauUtilise || getRemiseVIP() > 0) && (
+                <div style={{ fontSize: '13px', color: 'var(--muted)', textDecoration: 'line-through' }}>
+                  {prixBase.toFixed(2).replace('.', ',')}€
+                </div>
+              )}
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.8rem', color: 'var(--vd)' }}>
                 {prix.toFixed(2).replace('.', ',')}€
               </div>
             </div>
