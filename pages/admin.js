@@ -377,12 +377,18 @@ export default function Admin() {
                   <div key={c.id} style={{ padding: '1rem 1.5rem', borderRadius: 'var(--r)', background: 'rgba(255,220,100,0.15)', border: '2px solid #F0C040', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <div>
                       <div style={{ fontWeight: 600, color: 'var(--vd)' }}>
-                        {c.prioritaire && <span style={{ color: '#F0C040', marginRight: '4px' }}>⭐ PRIORITAIRE</span>}
-                        Nouvelle demande - {c.prenom}
-                      </div>
-                      <div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '3px' }}>
-                        {c.domaine} - {c.sujet} - {c.minutes} min - {c.paiement === 'wero' ? parseFloat(c.montant || 0).toFixed(2) + 'e via Wero' : ((c.montantPaye || 0) / 100).toFixed(2) + 'e via Stripe'} paye
-                      </div>
+  {c.prioritaire && <span style={{ color: '#F0C040', marginRight: '4px' }}>⭐ PRIORITAIRE</span>}
+  {c.cadeauUtilise && <span style={{ marginRight: '4px' }}>🎁</span>}
+  {c.statutVIP === 'silver' && <span style={{ marginRight: '4px' }}>🥈</span>}
+  {c.statutVIP === 'gold' && <span style={{ marginRight: '4px' }}>🥇</span>}
+  {c.statutVIP === 'vip' && <span style={{ marginRight: '4px' }}>👑</span>}
+  Nouvelle demande - {c.prenom}
+</div>
+<div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '3px' }}>
+  {c.domaine} - {c.sujet} - {c.minutes} min - {c.paiement === 'wero' ? parseFloat(c.montant || 0).toFixed(2) + 'e via Wero' : ((c.montantPaye || 0) / 100).toFixed(2) + 'e via Stripe'} paye
+  {c.cadeauUtilise && <span style={{ marginLeft: '6px', color: 'var(--v)', fontWeight: 500 }}>· 🎁 Cadeau utilisé</span>}
+  {c.statutVIP && c.statutVIP !== 'bronze' && <span style={{ marginLeft: '6px', color: 'var(--v)', fontWeight: 500 }}>· {c.statutVIP.toUpperCase()}</span>}
+</div>
                       {c.paiement === 'wero' && c.telephone && (
                         <div style={{ fontSize: '13px', color: 'var(--vd)', marginTop: '4px', fontWeight: 500 }}>Tel: {c.telephone}</div>
                       )}
@@ -406,9 +412,13 @@ export default function Admin() {
                     <div key={c.id} onClick={() => setSelected(c.id)} style={{ padding: '0.85rem', borderRadius: 'var(--r)', cursor: 'pointer', marginBottom: '4px', position: 'relative', transition: 'all 0.15s', background: selected === c.id ? 'rgba(123,94,167,0.1)' : 'transparent', border: selected === c.id ? '1px solid var(--vl)' : '1px solid transparent' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                         <div style={{ fontWeight: 500, fontSize: '14px', color: 'var(--vd)' }}>
-                          {c.prioritaire && <span style={{ color: '#F0C040', marginRight: '4px' }}>⭐</span>}
-                          {c.prenom}
-                        </div>
+  {c.prioritaire && <span style={{ color: '#F0C040', marginRight: '4px' }}>⭐</span>}
+  {c.cadeauUtilise && <span style={{ marginRight: '4px' }}>🎁</span>}
+  {c.statutVIP === 'silver' && <span style={{ marginRight: '4px' }}>🥈</span>}
+  {c.statutVIP === 'gold' && <span style={{ marginRight: '4px' }}>🥇</span>}
+  {c.statutVIP === 'vip' && <span style={{ marginRight: '4px' }}>👑</span>}
+  {c.prenom}
+</div>
                         <div style={{ fontSize: '12px', fontWeight: 600, color: timerColor(c.id) }}>
                           {c.statut === 'active' ? formatTimer(c.id) : c.statut === 'en_attente' ? 'Attente' : 'OK'}
                         </div>
