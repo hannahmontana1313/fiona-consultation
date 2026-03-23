@@ -115,3 +115,4 @@ const s = {
   btn: { width: '100%', padding: '0.9rem', background: 'linear-gradient(135deg, var(--v), var(--vd))', color: '#fff', border: 'none', borderRadius: 'var(--r)', fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, cursor: 'pointer', letterSpacing: '0.05em' },
   btnOff: { opacity: 0.5, cursor: 'not-allowed' },
 };
+
