@@ -49,7 +49,7 @@ Réponds UNIQUEMENT en JSON valide, sans backticks ni markdown :
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 1500,
         messages: [{ role: 'user', content: prompt }],
       }),
@@ -77,7 +77,7 @@ Réponds UNIQUEMENT en JSON valide, sans backticks ni markdown :
     return res.status(200).json({ id: docRef.id });
 
   } catch (e) {
-    console.error('Erreur:', e);
+    console.error('Erreur Claude:', JSON.stringify(claudeData));
     return res.status(500).json({ error: 'Erreur lors de la génération' });
   }
 }
