@@ -77,7 +77,7 @@ Réponds UNIQUEMENT en JSON valide, sans backticks ni markdown :
     return res.status(200).json({ id: docRef.id });
 
   } catch (e) {
-    console.error('Erreur Claude:', JSON.stringify(claudeData));
-    return res.status(500).json({ error: 'Erreur lors de la génération' });
-  }
+    console.error('Erreur:', e.message);
+    return res.status(500).json({ error: 'Erreur lors de la generation' });
+}
 }
